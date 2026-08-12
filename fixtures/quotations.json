@@ -1,0 +1,247 @@
+{"schemaVersion":"clofin.capture/1",
+ "fixture":"quotations",
+ "provenance":
+ {"schemaVersion":"clofin.capture/1",
+  "sourceCommit":"5c7b4badced5e807e1022fce44cbcad38c6d2095",
+  "sourceCommitShort":"5c7b4ba",
+  "sourceRef":"ref-1",
+  "sourceUrl":
+  "https://github.com/EchoJustus/clofin-core/tree/5c7b4badced5e807e1022fce44cbcad38c6d2095",
+  "tag":"ref-1",
+  "tagKind":"lightweight",
+  "releaseAudit":
+  {"label":"PARTIAL",
+   "statement":
+   "RELEASE AUDIT: PARTIAL. Charter items 1-4 of 8 were performed (migrations replayed from empty; full suite; cross-document consistency; the partial-set sweep). Items 5-7 were NOT performed - standing-lessons compliance, known-debt reconciliation, and the synthetic-data/neutrality sweep - because the external auditor's compute quota was exhausted mid-audit. Closed under the recorded resource-interruption fallback; the uncovered items carry forward as mandatory-first scope for ref-2.",
+   "source":"release-annotation-file",
+   "sourceRef":"docs/releases/ref-1.annotation.txt",
+   "sourceSha256":
+   "cbdc34fd5c4ac5c41076d02020a20aac7377446b479bfb0b744ea8c780fdf8e9"},
+  "capturedAt":"2026-08-12T22:40:33.471124852Z",
+  "schemaVersionApplied":"0011",
+  "harness":
+  {"commit":"00c148df1610a7c563ea27d0eae4e85155388f01", "dirty":
+                                                        true}},
+ "note":
+ "Extracted verbatim from the captured commit's own docs/COMPLIANCE.md and docs/DOMAIN_MODEL.md. The only transformation is unwrapping hard-wrapped lines into the paragraph they are. ADR-0020 RULE 3.",
+ "controls":
+ [{"heading":"### C-01 Segregation of duties \u2705",
+   "url":
+   "https://github.com/EchoJustus/clofin-core/blob/5c7b4badced5e807e1022fce44cbcad38c6d2095/docs/COMPLIANCE.md#L40",
+   "id":"C-01",
+   "boundary":
+   "It holds against the application and against a defect in it. It does **not** hold against an adversary who can choose the `X-Actor-Id` header, because authentication is a seeded actor with no token and no signature \u2014 see \u00a74. C-01 is enforced; the identity it is enforced against is asserted by the caller.",
+   "boundaryUrl":
+   "https://github.com/EchoJustus/clofin-core/blob/5c7b4badced5e807e1022fce44cbcad38c6d2095/docs/COMPLIANCE.md#L77",
+   "statement":
+   "The actor who creates or submits a payment instruction must not be the actor who approves it.",
+   "line":40,
+   "title":"Segregation of duties",
+   "boundaryLine":77,
+   "file":"docs/COMPLIANCE.md"},
+  {"id":"C-02",
+   "title":"Dual authorisation proportionate to value",
+   "heading":
+   "### C-02 Dual authorisation proportionate to value \u2705",
+   "statement":
+   "The number of approvals required rises with the amount, and no approver may approve beyond their own limit.",
+   "file":"docs/COMPLIANCE.md",
+   "line":126,
+   "url":
+   "https://github.com/EchoJustus/clofin-core/blob/5c7b4badced5e807e1022fce44cbcad38c6d2095/docs/COMPLIANCE.md#L126"},
+  {"id":"C-03",
+   "title":"Immutable financial records",
+   "heading":"### C-03 Immutable financial records \u2705",
+   "statement":
+   "A posted journal entry can never be altered or removed.",
+   "file":"docs/COMPLIANCE.md",
+   "line":183,
+   "url":
+   "https://github.com/EchoJustus/clofin-core/blob/5c7b4badced5e807e1022fce44cbcad38c6d2095/docs/COMPLIANCE.md#L183"},
+  {"id":"C-04",
+   "title":"Ledger integrity",
+   "heading":"### C-04 Ledger integrity \u2705",
+   "statement":
+   "Total debits equal total credits, per currency, for every entry \u2014 and every entry has at least two lines to balance.",
+   "file":"docs/COMPLIANCE.md",
+   "line":203,
+   "url":
+   "https://github.com/EchoJustus/clofin-core/blob/5c7b4badced5e807e1022fce44cbcad38c6d2095/docs/COMPLIANCE.md#L203"},
+  {"id":"C-05",
+   "title":"Complete and attributable audit trail",
+   "heading":"### C-05 Complete and attributable audit trail \u2705",
+   "statement":
+   "Every state change records who did what, to which subject, when, and what changed \u2014 and cannot be altered afterwards \u2014 **with one disclosed exception: a late `timeout-resolution` that moves an already-complete settlement batch's derived status emits no batch-subject event.** That exception is described in full in \u00a74 and is named here rather than three hundred lines below, because a control statement whose scope a reader discovers elsewhere in the same document is the defect standing lesson **L-14** exists to prevent (audit finding **A-004**). The payment's own transition *is* recorded in that transaction, so nothing is unattributable; what is missing is an event whose subject is the batch.",
+   "file":"docs/COMPLIANCE.md",
+   "line":257,
+   "url":
+   "https://github.com/EchoJustus/clofin-core/blob/5c7b4badced5e807e1022fce44cbcad38c6d2095/docs/COMPLIANCE.md#L257"},
+  {"id":"C-06",
+   "title":"Duplicate payment prevention",
+   "heading":"### C-06 Duplicate payment prevention \u2705",
+   "statement":"A retry cannot cause a second payment.",
+   "file":"docs/COMPLIANCE.md",
+   "line":488,
+   "url":
+   "https://github.com/EchoJustus/clofin-core/blob/5c7b4badced5e807e1022fce44cbcad38c6d2095/docs/COMPLIANCE.md#L488"},
+  {"id":"C-07",
+   "title":"Sanctions screening before release",
+   "heading":
+   "### C-07 Sanctions screening before release \ud83d\udccb",
+   "statement":
+   "No instruction can be released without a completed screening decision, and a hit blocks release pending disposition.",
+   "file":"docs/COMPLIANCE.md",
+   "line":576,
+   "url":
+   "https://github.com/EchoJustus/clofin-core/blob/5c7b4badced5e807e1022fce44cbcad38c6d2095/docs/COMPLIANCE.md#L576"},
+  {"heading":"### C-08 Least privilege \u2705",
+   "url":
+   "https://github.com/EchoJustus/clofin-core/blob/5c7b4badced5e807e1022fce44cbcad38c6d2095/docs/COMPLIANCE.md#L594",
+   "id":"C-08",
+   "boundary":
+   "Authentication is a seeded actor named by an `X-Actor-Id` header. It carries no token and no signature, so it does not resist an adversary and is not presented as doing so \u2014 see \u00a74 and the `X-Actor-Id` description in `api/openapi.yaml`. What it delivers is a real principal with a real organisation and a real permission set, which is what the *authorisation* model needs to be enforceable at all.",
+   "boundaryUrl":
+   "https://github.com/EchoJustus/clofin-core/blob/5c7b4badced5e807e1022fce44cbcad38c6d2095/docs/COMPLIANCE.md#L634",
+   "statement":
+   "A user can perform only what their role explicitly permits.",
+   "line":594,
+   "title":"Least privilege",
+   "boundaryLine":634,
+   "file":"docs/COMPLIANCE.md"},
+  {"id":"C-09",
+   "title":"Data minimisation",
+   "heading":"### C-09 Data minimisation \u2705 (partial)",
+   "statement":
+   "CloFin holds no more counterparty or identity data than the function requires, and **no request or configuration logging emits a sensitive value**: request logs carry method, path, status, duration and correlation id and nothing else, and configuration is redacted before it is printed.",
+   "file":"docs/COMPLIANCE.md",
+   "line":645,
+   "url":
+   "https://github.com/EchoJustus/clofin-core/blob/5c7b4badced5e807e1022fce44cbcad38c6d2095/docs/COMPLIANCE.md#L645"},
+  {"id":"C-10",
+   "title":"Change control over the schema",
+   "heading":"### C-10 Change control over the schema \u2705",
+   "statement":
+   "The **migration history** of any environment is identifiable, comparable and tamper-evident: which migrations have been applied, in what order, and whether any applied file has been edited since.",
+   "file":"docs/COMPLIANCE.md",
+   "line":681,
+   "url":
+   "https://github.com/EchoJustus/clofin-core/blob/5c7b4badced5e807e1022fce44cbcad38c6d2095/docs/COMPLIANCE.md#L681"},
+  {"id":"C-11",
+   "title":"Error handling that does not leak",
+   "heading":
+   "### C-11 Error handling that does not leak \ud83d\udd28",
+   "statement":
+   "An error response reveals nothing about the system's internals: an unexpected defect returns a correlation id and nothing else, and a domain error returns its own message plus only the data its call site marked public.",
+   "file":"docs/COMPLIANCE.md",
+   "line":712,
+   "url":
+   "https://github.com/EchoJustus/clofin-core/blob/5c7b4badced5e807e1022fce44cbcad38c6d2095/docs/COMPLIANCE.md#L712"},
+  {"id":"C-12",
+   "title":"Supply chain control",
+   "heading":"### C-12 Supply chain control \u2705",
+   "statement":
+   "Every **direct** runtime dependency is known, justified and has a named upstream with a security process: the seven coordinates in `deps.edn`, each with a row in ADR-0004.",
+   "file":"docs/COMPLIANCE.md",
+   "line":743,
+   "url":
+   "https://github.com/EchoJustus/clofin-core/blob/5c7b4badced5e807e1022fce44cbcad38c6d2095/docs/COMPLIANCE.md#L743"}],
+ "invariants":
+ [{"id":"I1",
+   "statement":
+   "Every journal entry's debits equal its credits, per currency.",
+   "enforcement":
+   "`clofin.ledger.entry/entry` **and** a deferred database trigger \u2705",
+   "file":"docs/DOMAIN_MODEL.md",
+   "line":457,
+   "url":
+   "https://github.com/EchoJustus/clofin-core/blob/5c7b4badced5e807e1022fce44cbcad38c6d2095/docs/DOMAIN_MODEL.md#L457"},
+  {"id":"I2",
+   "statement":"Journal line amounts are strictly positive.",
+   "enforcement":
+   "Domain constructor **and** `CHECK` constraint \u2705",
+   "file":"docs/DOMAIN_MODEL.md",
+   "line":458,
+   "url":
+   "https://github.com/EchoJustus/clofin-core/blob/5c7b4badced5e807e1022fce44cbcad38c6d2095/docs/DOMAIN_MODEL.md#L458"},
+  {"id":"I3",
+   "statement":"A posted entry is never updated or deleted.",
+   "enforcement":"Append-only database triggers \u2705",
+   "file":"docs/DOMAIN_MODEL.md",
+   "line":459,
+   "url":
+   "https://github.com/EchoJustus/clofin-core/blob/5c7b4badced5e807e1022fce44cbcad38c6d2095/docs/DOMAIN_MODEL.md#L459"},
+  {"id":"I4",
+   "statement":"An entry may be reversed at most once.",
+   "enforcement":"Partial unique index \u2705",
+   "file":"docs/DOMAIN_MODEL.md",
+   "line":460,
+   "url":
+   "https://github.com/EchoJustus/clofin-core/blob/5c7b4badced5e807e1022fce44cbcad38c6d2095/docs/DOMAIN_MODEL.md#L460"},
+  {"id":"I5",
+   "statement":
+   "Money arithmetic never crosses currencies implicitly.",
+   "enforcement":"`clofin.money` raises \u2705",
+   "file":"docs/DOMAIN_MODEL.md",
+   "line":461,
+   "url":
+   "https://github.com/EchoJustus/clofin-core/blob/5c7b4badced5e807e1022fce44cbcad38c6d2095/docs/DOMAIN_MODEL.md#L461"},
+  {"id":"I6",
+   "statement":
+   "An account holds exactly one currency, and every line posted to it is denominated in that currency.",
+   "enforcement":
+   "`ledger_account.currency` `NOT NULL`; the composite foreign key `journal_line (account_id, currency) \u2192 ledger_account (id, currency)` (migration `0011`); and `clofin.ledger.repository/assert-postable!`, which refuses a mismatched line before the write. The schema half is new: until audit finding **A-002** both columns referenced the currency registry and **nothing related them**, so raw SQL could commit a balanced entry whose lines were denominated differently from their accounts \u2014 the application blocked it and the balance query then filtered by account currency, computing a correct balance over an incorrect row \u2705",
+   "file":"docs/DOMAIN_MODEL.md",
+   "line":462,
+   "url":
+   "https://github.com/EchoJustus/clofin-core/blob/5c7b4badced5e807e1022fce44cbcad38c6d2095/docs/DOMAIN_MODEL.md#L462"},
+  {"id":"I7",
+   "statement":
+   "Every entry names a reference type from a closed vocabulary and a reference id, both required.",
+   "enforcement":
+   "`NOT NULL` plus the `journal_entry_reference_type_known` constraint. **Shape only: nothing resolves `reference.id` to a target or proves causation** \u2014 the API accepts a well-formed UUID for any known type, and its own opening-balance fixtures do exactly that. The invariant read \"every entry references the business object that caused it\", which is broader than the mechanical guarantee (audit finding **A-003**); referential resolution is named debt in [COMPLIANCE \u00a74](COMPLIANCE.md) \u2705",
+   "file":"docs/DOMAIN_MODEL.md",
+   "line":463,
+   "url":
+   "https://github.com/EchoJustus/clofin-core/blob/5c7b4badced5e807e1022fce44cbcad38c6d2095/docs/DOMAIN_MODEL.md#L463"},
+  {"id":"I8",
+   "statement":"An instruction's approver is never its maker.",
+   "enforcement":
+   "`clofin.authz.approval/evaluate`, a pure function \u2014 refused with no HTTP layer involved, and table-driven over the whole actor \u00d7 instruction matrix \u2705",
+   "file":"docs/DOMAIN_MODEL.md",
+   "line":464,
+   "url":
+   "https://github.com/EchoJustus/clofin-core/blob/5c7b4badced5e807e1022fce44cbcad38c6d2095/docs/DOMAIN_MODEL.md#L464"},
+  {"id":"I9",
+   "statement":"A state change and its audit event commit together.",
+   "enforcement":
+   "Same transaction. `clofin.audit.repository/record!` takes the caller's connection and cannot open one, so an audit write outside the change it describes is not expressible \u2705",
+   "file":"docs/DOMAIN_MODEL.md",
+   "line":465,
+   "url":
+   "https://github.com/EchoJustus/clofin-core/blob/5c7b4badced5e807e1022fce44cbcad38c6d2095/docs/DOMAIN_MODEL.md#L465"},
+  {"id":"I10",
+   "statement":
+   "A replayed idempotency key never performs work twice.",
+   "enforcement":
+   "Primary key `(organisation_id, key)` plus the stored response, written in the same transaction as the effect \u2705",
+   "file":"docs/DOMAIN_MODEL.md",
+   "line":466,
+   "url":
+   "https://github.com/EchoJustus/clofin-core/blob/5c7b4badced5e807e1022fce44cbcad38c6d2095/docs/DOMAIN_MODEL.md#L466"},
+  {"id":"I11",
+   "statement":"A committed journal entry has at least two lines.",
+   "enforcement":
+   "Deferred constraint trigger `journal_entry_must_be_complete` on `journal_entry` (migration `0008`). I1's trigger fires on `journal_line`, so an entry with no lines never fired it \u2014 audit finding **F-003** \u2705",
+   "file":"docs/DOMAIN_MODEL.md",
+   "line":467,
+   "url":
+   "https://github.com/EchoJustus/clofin-core/blob/5c7b4badced5e807e1022fce44cbcad38c6d2095/docs/DOMAIN_MODEL.md#L467"},
+  {"id":"I12",
+   "statement":
+   "An account's status is read under a lock by the transaction that writes against it.",
+   "enforcement":
+   "`select \u2026 for update` in `clofin.ledger.repository/assert-postable!` and `clofin.payments.repository/assert-debtor-account!`. Reading a status and then writing on it is a race under `READ COMMITTED` (standing lesson **L-8**) \u2014 audit finding **F-004** \u2705",
+   "file":"docs/DOMAIN_MODEL.md",
+   "line":468,
+   "url":
+   "https://github.com/EchoJustus/clofin-core/blob/5c7b4badced5e807e1022fce44cbcad38c6d2095/docs/DOMAIN_MODEL.md#L468"}]}

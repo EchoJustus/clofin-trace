@@ -1,0 +1,791 @@
+{"schemaVersion":"clofin.capture/1",
+ "scenario":
+ {"id":"segregation-of-duties-refused",
+  "title":"Segregation of duties, attempted and refused",
+  "summary":
+  "An operator tries to open a ledger account, a second operator tries to submit somebody else's draft, and the maker tries to approve her own payment. Every attempt is refused by the running system.",
+  "source":"docs/uat/UAT-005-segregation-of-duties.md"},
+ "provenance":
+ {"schemaVersion":"clofin.capture/1",
+  "sourceCommit":"5c7b4badced5e807e1022fce44cbcad38c6d2095",
+  "sourceCommitShort":"5c7b4ba",
+  "sourceRef":"ref-1",
+  "sourceUrl":
+  "https://github.com/EchoJustus/clofin-core/tree/5c7b4badced5e807e1022fce44cbcad38c6d2095",
+  "tag":"ref-1",
+  "tagKind":"lightweight",
+  "releaseAudit":
+  {"label":"PARTIAL",
+   "statement":
+   "RELEASE AUDIT: PARTIAL. Charter items 1-4 of 8 were performed (migrations replayed from empty; full suite; cross-document consistency; the partial-set sweep). Items 5-7 were NOT performed - standing-lessons compliance, known-debt reconciliation, and the synthetic-data/neutrality sweep - because the external auditor's compute quota was exhausted mid-audit. Closed under the recorded resource-interruption fallback; the uncovered items carry forward as mandatory-first scope for ref-2.",
+   "source":"release-annotation-file",
+   "sourceRef":"docs/releases/ref-1.annotation.txt",
+   "sourceSha256":
+   "cbdc34fd5c4ac5c41076d02020a20aac7377446b479bfb0b744ea8c780fdf8e9"},
+  "capturedAt":"2026-08-12T22:40:33.471124852Z",
+  "schemaVersionApplied":"0011",
+  "harness":
+  {"commit":"00c148df1610a7c563ea27d0eae4e85155388f01", "dirty":
+                                                        true}},
+ "scopeStatement":
+ {"fixture":"service-info.json",
+  "bodySha256":
+  "173858acdf40c65f5ba58689ec86cf088138a812cb7a87a7d20a00c2d84c2bf7",
+  "disclaimer":
+  "CloFin operates on synthetic data only. It is not connected to any bank, payment scheme or central bank, holds no regulatory authorisation, and never processes real funds."},
+ "organisation":"6a892ae3-d66b-47c4-ade1-0098927f8464",
+ "accounts":
+ [{"id":"9331b2aa-1d58-4677-a07e-af99ebc77c7b",
+   "code":"1100-CLIENT-FUNDS",
+   "name":"Client funds \u2014 pooled",
+   "type":"asset",
+   "currency":"SGD",
+   "status":"active"}],
+ "rendering":
+ {"amounts":
+  {"function":"clofin.money/format-amount",
+   "note":
+   "Money crosses the API as an integer count of minor units. Every `display` string in this bundle was produced from the adjacent minorUnits by the system's own formatter, in clofin-core, at capture time \u2014 never in a browser."}},
+ "steps":
+ [{"n":1,
+   "id":"scenario-note",
+   "kind":"note",
+   "title":"What you are about to watch",
+   "narrative":
+   "Five actors are seeded with roles, then three things are attempted that the model does not permit: an operator opening a ledger account, one operator submitting another's draft, and the maker approving her own payment. Each is refused by the running system; the refusals are the captured responses below."},
+  {"n":2,
+   "id":"organisation-created",
+   "kind":"http",
+   "title":"An organisation to act in",
+   "narrative":
+   "Organisation creation is the one unauthenticated operation: there is no actor until an organisation exists to hold one.",
+   "request":
+   {"method":"POST",
+    "path":"/organisations",
+    "headers":{"content-type":"application/json"},
+    "body":
+    {"legalName":"Meridian Freight Holdings Pte Ltd",
+     "shortName":"capture-uat005"},
+    "bodyRaw":
+    "{\"legalName\":\"Meridian Freight Holdings Pte Ltd\",\"shortName\":\"capture-uat005\"}"},
+   "response":
+   {"status":201,
+    "headers":
+    {"content-length":"140",
+     "content-type":"application/json",
+     "date":"Wed, 12 Aug 2026 22:40:41 GMT",
+     "location":"/organisations/6a892ae3-d66b-47c4-ade1-0098927f8464",
+     "x-correlation-id":"0ecc27c1-cb83-4a38-b468-6b4b826bedc0"},
+    "body":
+    {"id":"6a892ae3-d66b-47c4-ade1-0098927f8464",
+     "legalName":"Meridian Freight Holdings Pte Ltd",
+     "shortName":"capture-uat005",
+     "status":"active"},
+    "bodyRaw":
+    "{\"id\":\"6a892ae3-d66b-47c4-ade1-0098927f8464\",\"legalName\":\"Meridian Freight Holdings Pte Ltd\",\"shortName\":\"capture-uat005\",\"status\":\"active\"}",
+    "bodySha256":
+    "dd9a233a55e691a2712040dcc356ab7556a984cdbafe2a90ec990c50bdd07d71"},
+   "expected":{"status":201}},
+  {"n":3,
+   "id":"seed-actors",
+   "kind":"sql",
+   "title":"Seed the actors and the organisation's approval policy",
+   "narrative":
+   "There is deliberately no endpoint that creates an actor, grants a role or sets a limit. Priya raises payments; Wei and Nadia approve, to different ceilings; Sam opens accounts; Rae reads the trail; Tom is a second operator.",
+   "statement":
+   "insert into actor (id, organisation_id, display_name) values ('11111111-1111-1111-1111-111111111111','6a892ae3-d66b-47c4-ade1-0098927f8464','Priya (maker)'),('22222222-2222-2222-2222-222222222222','6a892ae3-d66b-47c4-ade1-0098927f8464','Wei (checker)'),('33333333-3333-3333-3333-333333333333','6a892ae3-d66b-47c4-ade1-0098927f8464','Nadia (checker)'),('44444444-4444-4444-4444-444444444444','6a892ae3-d66b-47c4-ade1-0098927f8464','Sam (controller)'),('55555555-5555-5555-5555-555555555555','6a892ae3-d66b-47c4-ade1-0098927f8464','Rae (auditor)'),('66666666-6666-6666-6666-666666666666','6a892ae3-d66b-47c4-ade1-0098927f8464','Tom (second operator)'); insert into actor_role (actor_id, role) values ('11111111-1111-1111-1111-111111111111','operator'),('22222222-2222-2222-2222-222222222222','approver'),('33333333-3333-3333-3333-333333333333','approver'),('44444444-4444-4444-4444-444444444444','controller'),('55555555-5555-5555-5555-555555555555','auditor'),('66666666-6666-6666-6666-666666666666','operator'); insert into approver_limit (actor_id, currency, limit_minor) values ('22222222-2222-2222-2222-222222222222','SGD',500000),('33333333-3333-3333-3333-333333333333','SGD',5000000); insert into approval_threshold (organisation_id, currency, from_minor, approvals_required) values ('6a892ae3-d66b-47c4-ade1-0098927f8464','SGD',0,1),('6a892ae3-d66b-47c4-ade1-0098927f8464','SGD',100000,2);",
+   "result":{"ok":true, "rows":6}},
+  {"n":4,
+   "id":"superuser-refused",
+   "kind":"sql",
+   "title":
+   "Grant yourself a stronger role, and watch the database refuse",
+   "narrative":
+   "There is no superuser role in the model, and one cannot be added by writing a row. The refusal below is the check constraint's own message.",
+   "statement":
+   "insert into actor_role (actor_id, role) values ('11111111-1111-1111-1111-111111111111','superuser');",
+   "result":
+   {"ok":false,
+    "error":
+    "ERROR: new row for relation \"actor_role\" violates check constraint \"role_known\"\n  Detail: Failing row contains (11111111-1111-1111-1111-111111111111, superuser).",
+    "sqlstate":"23514"}},
+  {"n":5,
+   "id":"account-create-refused",
+   "kind":"http",
+   "title":"An operator cannot open a ledger account",
+   "narrative":
+   "Priya holds `operator`. The response names the permission she lacks and does not list what she can do \u2014 a refusal that enumerated capabilities would be a capability listing.",
+   "request":
+   {"method":"POST",
+    "path":"/accounts",
+    "headers":
+    {"content-type":"application/json",
+     "x-actor-id":"11111111-1111-1111-1111-111111111111"},
+    "body":
+    {"code":"1100-CLIENT-FUNDS",
+     "name":"Client funds \u2014 pooled",
+     "type":"asset",
+     "currency":"SGD"},
+    "bodyRaw":
+    "{\"code\":\"1100-CLIENT-FUNDS\",\"name\":\"Client funds \\u2014 pooled\",\"type\":\"asset\",\"currency\":\"SGD\"}"},
+   "response":
+   {"status":403,
+    "headers":
+    {"content-length":"242",
+     "content-type":"application/problem+json",
+     "date":"Wed, 12 Aug 2026 22:40:41 GMT",
+     "x-correlation-id":"f9e172ec-69d6-45e3-a96a-fb5077293755"},
+    "body":
+    {"type":"https://clofin.dev/problems/forbidden",
+     "title":"Not permitted",
+     "status":403,
+     "detail":"This actor may not create",
+     "instance":"f9e172ec-69d6-45e3-a96a-fb5077293755",
+     "errors":
+     {"permission":"account/create", "actor-status":"active"}},
+    "bodyRaw":
+    "{\"type\":\"https:\\/\\/clofin.dev\\/problems\\/forbidden\",\"title\":\"Not permitted\",\"status\":403,\"detail\":\"This actor may not create\",\"instance\":\"f9e172ec-69d6-45e3-a96a-fb5077293755\",\"errors\":{\"permission\":\"account\\/create\",\"actor-status\":\"active\"}}",
+    "bodySha256":
+    "bbdc43ad67761061e4dc7f16ad4757c8cf9ef1848f4d0fe296e0aa07e0cd8ca7"},
+   "expected":{"status":403}},
+  {"n":6,
+   "id":"account-created",
+   "kind":"http",
+   "title":"Open 1100-CLIENT-FUNDS",
+   "narrative":
+   "The same request as the one just refused, from Sam, who holds `controller`. Same request, different actor, opposite outcome.",
+   "request":
+   {"method":"POST",
+    "path":"/accounts",
+    "headers":
+    {"content-type":"application/json",
+     "x-actor-id":"44444444-4444-4444-4444-444444444444"},
+    "body":
+    {"code":"1100-CLIENT-FUNDS",
+     "name":"Client funds \u2014 pooled",
+     "type":"asset",
+     "currency":"SGD"},
+    "bodyRaw":
+    "{\"code\":\"1100-CLIENT-FUNDS\",\"name\":\"Client funds \\u2014 pooled\",\"type\":\"asset\",\"currency\":\"SGD\"}"},
+   "response":
+   {"status":201,
+    "headers":
+    {"content-length":"238",
+     "content-type":"application/json",
+     "date":"Wed, 12 Aug 2026 22:40:41 GMT",
+     "location":
+     "/accounts/9331b2aa-1d58-4677-a07e-af99ebc77c7b?organisationId=6a892ae3-d66b-47c4-ade1-0098927f8464",
+     "x-correlation-id":"9882fb14-ea57-48b7-a1fb-b9488f988ff9"},
+    "body":
+    {"id":"9331b2aa-1d58-4677-a07e-af99ebc77c7b",
+     "organisationId":"6a892ae3-d66b-47c4-ade1-0098927f8464",
+     "code":"1100-CLIENT-FUNDS",
+     "name":"Client funds \u2014 pooled",
+     "type":"asset",
+     "currency":"SGD",
+     "status":"active",
+     "normalBalance":"debit"},
+    "bodyRaw":
+    "{\"id\":\"9331b2aa-1d58-4677-a07e-af99ebc77c7b\",\"organisationId\":\"6a892ae3-d66b-47c4-ade1-0098927f8464\",\"code\":\"1100-CLIENT-FUNDS\",\"name\":\"Client funds \\u2014 pooled\",\"type\":\"asset\",\"currency\":\"SGD\",\"status\":\"active\",\"normalBalance\":\"debit\"}",
+    "bodySha256":
+    "fa412906d72804f1d72840892947df7537fe9b44b9526feb78cf34a5871f2059"},
+   "expected":{"status":201}},
+  {"n":7,
+   "id":"payment-raised",
+   "kind":"http",
+   "title":"Priya raises a payment",
+   "narrative":
+   "SGD 500.00. `createdBy` is not a field the request sent \u2014 it is who the request authenticated as.",
+   "request":
+   {"method":"POST",
+    "path":"/payment-instructions",
+    "headers":
+    {"content-type":"application/json",
+     "idempotency-key":"capture-uat005-raise-1",
+     "x-actor-id":"11111111-1111-1111-1111-111111111111"},
+    "body":
+    {"debtorAccountId":"9331b2aa-1d58-4677-a07e-af99ebc77c7b",
+     "creditorName":"Pacific Rim Logistics Pte Ltd",
+     "creditorAccount":"SG-SYNTH-88012345",
+     "amount":{"currency":"SGD", "minorUnits":50000},
+     "valueDate":"2026-12-01",
+     "purposeCode":"SUPP"},
+    "bodyRaw":
+    "{\"debtorAccountId\":\"9331b2aa-1d58-4677-a07e-af99ebc77c7b\",\"creditorName\":\"Pacific Rim Logistics Pte Ltd\",\"creditorAccount\":\"SG-SYNTH-88012345\",\"amount\":{\"currency\":\"SGD\",\"minorUnits\":50000},\"valueDate\":\"2026-12-01\",\"purposeCode\":\"SUPP\"}"},
+   "response":
+   {"status":201,
+    "headers":
+    {"content-length":"489",
+     "content-type":"application/json",
+     "date":"Wed, 12 Aug 2026 22:40:41 GMT",
+     "location":
+     "/payment-instructions/425737ad-88d7-46f0-8b12-7fb10ef21f71?organisationId=6a892ae3-d66b-47c4-ade1-0098927f8464",
+     "x-correlation-id":"47619125-f292-41cc-86bb-f98bf9effb23"},
+    "body":
+    {"createdAt":"2026-08-12T22:40:41.591700Z",
+     "organisationId":"6a892ae3-d66b-47c4-ade1-0098927f8464",
+     "purposeCode":"SUPP",
+     "id":"425737ad-88d7-46f0-8b12-7fb10ef21f71",
+     "createdBy":"11111111-1111-1111-1111-111111111111",
+     "valueDate":"2026-12-01",
+     "status":"draft",
+     "permittedTransitions":["cancel", "submit"],
+     "creditorName":"Pacific Rim Logistics Pte Ltd",
+     "amount":{"currency":"SGD", "minorUnits":50000},
+     "creditorAccount":"SG-SYNTH-88012345",
+     "debtorAccountId":"9331b2aa-1d58-4677-a07e-af99ebc77c7b"},
+    "bodyRaw":
+    "{\"createdAt\":\"2026-08-12T22:40:41.591700Z\",\"organisationId\":\"6a892ae3-d66b-47c4-ade1-0098927f8464\",\"purposeCode\":\"SUPP\",\"id\":\"425737ad-88d7-46f0-8b12-7fb10ef21f71\",\"createdBy\":\"11111111-1111-1111-1111-111111111111\",\"valueDate\":\"2026-12-01\",\"status\":\"draft\",\"permittedTransitions\":[\"cancel\",\"submit\"],\"creditorName\":\"Pacific Rim Logistics Pte Ltd\",\"amount\":{\"currency\":\"SGD\",\"minorUnits\":50000},\"creditorAccount\":\"SG-SYNTH-88012345\",\"debtorAccountId\":\"9331b2aa-1d58-4677-a07e-af99ebc77c7b\"}",
+    "bodySha256":
+    "39d7a3cd10a2ad567227b5d1e0ae4fe606229603c0d6506d9de7bf566d4f1632"},
+   "expected":{"status":201}},
+  {"n":8,
+   "id":"created-by-refused",
+   "kind":"http",
+   "title":"A request that tries to name its own maker is refused",
+   "narrative":
+   "Sending `createdBy` is refused rather than quietly ignored: a caller that believed it had set the maker and was overridden would be reading a different payment from the one that exists.",
+   "request":
+   {"method":"POST",
+    "path":"/payment-instructions",
+    "headers":
+    {"content-type":"application/json",
+     "idempotency-key":"capture-uat005-raise-createdby",
+     "x-actor-id":"11111111-1111-1111-1111-111111111111"},
+    "body":
+    {"debtorAccountId":"9331b2aa-1d58-4677-a07e-af99ebc77c7b",
+     "createdBy":"22222222-2222-2222-2222-222222222222",
+     "creditorName":"Pacific Rim Logistics Pte Ltd",
+     "creditorAccount":"SG-SYNTH-88012345",
+     "amount":{"currency":"SGD", "minorUnits":50000},
+     "valueDate":"2026-12-01",
+     "purposeCode":"SUPP"},
+    "bodyRaw":
+    "{\"debtorAccountId\":\"9331b2aa-1d58-4677-a07e-af99ebc77c7b\",\"createdBy\":\"22222222-2222-2222-2222-222222222222\",\"creditorName\":\"Pacific Rim Logistics Pte Ltd\",\"creditorAccount\":\"SG-SYNTH-88012345\",\"amount\":{\"currency\":\"SGD\",\"minorUnits\":50000},\"valueDate\":\"2026-12-01\",\"purposeCode\":\"SUPP\"}"},
+   "response":
+   {"status":422,
+    "headers":
+    {"content-length":"284",
+     "content-type":"application/problem+json",
+     "date":"Wed, 12 Aug 2026 22:40:41 GMT",
+     "x-correlation-id":"bb7e4015-63ad-4902-b54e-4ae598ea3094"},
+    "body":
+    {"type":"https://clofin.dev/problems/validation",
+     "title":"Request failed validation",
+     "status":422,
+     "detail":"Request failed validation",
+     "instance":"bb7e4015-63ad-4902-b54e-4ae598ea3094",
+     "errors":
+     {"createdBy":
+      "is taken from the authenticated actor and cannot be set by the caller"}},
+    "bodyRaw":
+    "{\"type\":\"https:\\/\\/clofin.dev\\/problems\\/validation\",\"title\":\"Request failed validation\",\"status\":422,\"detail\":\"Request failed validation\",\"instance\":\"bb7e4015-63ad-4902-b54e-4ae598ea3094\",\"errors\":{\"createdBy\":\"is taken from the authenticated actor and cannot be set by the caller\"}}",
+    "bodySha256":
+    "7e16a9da8b70fddab47555cd7e0911295064d414332891be1db399025b3af19c"},
+   "expected":{"status":422}},
+  {"n":9,
+   "id":"payment-submitted",
+   "kind":"http",
+   "title":"Priya submits her own draft",
+   "narrative":"The instruction moves to `pendingApproval`.",
+   "request":
+   {"method":"POST",
+    "path":
+    "/payment-instructions/425737ad-88d7-46f0-8b12-7fb10ef21f71/submission",
+    "headers":
+    {"content-type":"application/json",
+     "idempotency-key":"capture-uat005-submit-1",
+     "x-actor-id":"11111111-1111-1111-1111-111111111111"},
+    "body":{},
+    "bodyRaw":"{}"},
+   "response":
+   {"status":200,
+    "headers":
+    {"content-length":"509",
+     "content-type":"application/json",
+     "date":"Wed, 12 Aug 2026 22:40:41 GMT",
+     "x-correlation-id":"af47d2e0-e597-4f52-9892-0a4a8be31411"},
+    "body":
+    {"createdAt":"2026-08-12T22:40:41.591700Z",
+     "organisationId":"6a892ae3-d66b-47c4-ade1-0098927f8464",
+     "purposeCode":"SUPP",
+     "id":"425737ad-88d7-46f0-8b12-7fb10ef21f71",
+     "createdBy":"11111111-1111-1111-1111-111111111111",
+     "valueDate":"2026-12-01",
+     "status":"pending-approval",
+     "permittedTransitions":["amend", "approve", "reject"],
+     "creditorName":"Pacific Rim Logistics Pte Ltd",
+     "amount":{"currency":"SGD", "minorUnits":50000},
+     "creditorAccount":"SG-SYNTH-88012345",
+     "debtorAccountId":"9331b2aa-1d58-4677-a07e-af99ebc77c7b"},
+    "bodyRaw":
+    "{\"createdAt\":\"2026-08-12T22:40:41.591700Z\",\"organisationId\":\"6a892ae3-d66b-47c4-ade1-0098927f8464\",\"purposeCode\":\"SUPP\",\"id\":\"425737ad-88d7-46f0-8b12-7fb10ef21f71\",\"createdBy\":\"11111111-1111-1111-1111-111111111111\",\"valueDate\":\"2026-12-01\",\"status\":\"pending-approval\",\"permittedTransitions\":[\"amend\",\"approve\",\"reject\"],\"creditorName\":\"Pacific Rim Logistics Pte Ltd\",\"amount\":{\"currency\":\"SGD\",\"minorUnits\":50000},\"creditorAccount\":\"SG-SYNTH-88012345\",\"debtorAccountId\":\"9331b2aa-1d58-4677-a07e-af99ebc77c7b\"}",
+    "bodySha256":
+    "7d7e4da0d98cd247435cae50dc0785d07ce16bb52c8ccc869b354085bf3d83d4"},
+   "expected":{"status":200}},
+  {"n":10,
+   "id":"second-draft-raised",
+   "kind":"http",
+   "title":"A second draft, also Priya's",
+   "narrative":"Raised so that somebody else can try to submit it.",
+   "request":
+   {"method":"POST",
+    "path":"/payment-instructions",
+    "headers":
+    {"content-type":"application/json",
+     "idempotency-key":"capture-uat005-raise-3",
+     "x-actor-id":"11111111-1111-1111-1111-111111111111"},
+    "body":
+    {"debtorAccountId":"9331b2aa-1d58-4677-a07e-af99ebc77c7b",
+     "creditorName":"Pacific Rim Logistics Pte Ltd",
+     "creditorAccount":"SG-SYNTH-88012345",
+     "amount":{"currency":"SGD", "minorUnits":50000},
+     "valueDate":"2026-12-01",
+     "purposeCode":"SUPP"},
+    "bodyRaw":
+    "{\"debtorAccountId\":\"9331b2aa-1d58-4677-a07e-af99ebc77c7b\",\"creditorName\":\"Pacific Rim Logistics Pte Ltd\",\"creditorAccount\":\"SG-SYNTH-88012345\",\"amount\":{\"currency\":\"SGD\",\"minorUnits\":50000},\"valueDate\":\"2026-12-01\",\"purposeCode\":\"SUPP\"}"},
+   "response":
+   {"status":201,
+    "headers":
+    {"content-length":"489",
+     "content-type":"application/json",
+     "date":"Wed, 12 Aug 2026 22:40:41 GMT",
+     "location":
+     "/payment-instructions/5636c28d-5fbd-45f0-afa3-fd196af96f93?organisationId=6a892ae3-d66b-47c4-ade1-0098927f8464",
+     "x-correlation-id":"b2212ebf-fbc6-4489-b830-ecb9079d5cb3"},
+    "body":
+    {"createdAt":"2026-08-12T22:40:41.661207Z",
+     "organisationId":"6a892ae3-d66b-47c4-ade1-0098927f8464",
+     "purposeCode":"SUPP",
+     "id":"5636c28d-5fbd-45f0-afa3-fd196af96f93",
+     "createdBy":"11111111-1111-1111-1111-111111111111",
+     "valueDate":"2026-12-01",
+     "status":"draft",
+     "permittedTransitions":["cancel", "submit"],
+     "creditorName":"Pacific Rim Logistics Pte Ltd",
+     "amount":{"currency":"SGD", "minorUnits":50000},
+     "creditorAccount":"SG-SYNTH-88012345",
+     "debtorAccountId":"9331b2aa-1d58-4677-a07e-af99ebc77c7b"},
+    "bodyRaw":
+    "{\"createdAt\":\"2026-08-12T22:40:41.661207Z\",\"organisationId\":\"6a892ae3-d66b-47c4-ade1-0098927f8464\",\"purposeCode\":\"SUPP\",\"id\":\"5636c28d-5fbd-45f0-afa3-fd196af96f93\",\"createdBy\":\"11111111-1111-1111-1111-111111111111\",\"valueDate\":\"2026-12-01\",\"status\":\"draft\",\"permittedTransitions\":[\"cancel\",\"submit\"],\"creditorName\":\"Pacific Rim Logistics Pte Ltd\",\"amount\":{\"currency\":\"SGD\",\"minorUnits\":50000},\"creditorAccount\":\"SG-SYNTH-88012345\",\"debtorAccountId\":\"9331b2aa-1d58-4677-a07e-af99ebc77c7b\"}",
+    "bodySha256":
+    "1fce8bdc022c05045b89dd6ba6bbeed5440e5b786310e3da1663b277bbf5d7b5"},
+   "expected":{"status":201}},
+  {"n":11,
+   "id":"foreign-submit-refused",
+   "kind":"http",
+   "title":"Tom tries to submit Priya's draft",
+   "narrative":
+   "Tom holds `operator`, which carries `payment/submit`. He is refused anyway, and the rule named in the response is `creator-only`. This step did not exist when UAT-005 was first written, and its absence is why audit finding F-001 reached production code.",
+   "request":
+   {"method":"POST",
+    "path":
+    "/payment-instructions/5636c28d-5fbd-45f0-afa3-fd196af96f93/submission",
+    "headers":
+    {"content-type":"application/json",
+     "idempotency-key":"capture-uat005-submit-tom",
+     "x-actor-id":"66666666-6666-6666-6666-666666666666"},
+    "body":{},
+    "bodyRaw":"{}"},
+   "response":
+   {"status":403,
+    "headers":
+    {"content-length":"323",
+     "content-type":"application/problem+json",
+     "date":"Wed, 12 Aug 2026 22:40:41 GMT",
+     "x-correlation-id":"4482d1bf-e94d-4402-8c79-16cf27fe8152"},
+    "body":
+    {"type":"https://clofin.dev/problems/forbidden",
+     "title":"Not permitted",
+     "status":403,
+     "detail":
+     "Only the actor who created a payment instruction may submit it",
+     "instance":"4482d1bf-e94d-4402-8c79-16cf27fe8152",
+     "errors":
+     {"instruction-id":"5636c28d-5fbd-45f0-afa3-fd196af96f93",
+      "attempted":"submit",
+      "rule":"creator-only"}},
+    "bodyRaw":
+    "{\"type\":\"https:\\/\\/clofin.dev\\/problems\\/forbidden\",\"title\":\"Not permitted\",\"status\":403,\"detail\":\"Only the actor who created a payment instruction may submit it\",\"instance\":\"4482d1bf-e94d-4402-8c79-16cf27fe8152\",\"errors\":{\"instruction-id\":\"5636c28d-5fbd-45f0-afa3-fd196af96f93\",\"attempted\":\"submit\",\"rule\":\"creator-only\"}}",
+    "bodySha256":
+    "dae80435a6a3175b0d7e348ef1c7202aeb129df92046594fa2ab264cbb5db52b"},
+   "expected":{"status":403}},
+  {"n":12,
+   "id":"second-draft-unmoved",
+   "kind":"http",
+   "title":"The draft has not moved",
+   "narrative":"Still `draft`. The refusal changed nothing.",
+   "request":
+   {"method":"GET",
+    "path":
+    "/payment-instructions/5636c28d-5fbd-45f0-afa3-fd196af96f93",
+    "headers":{"x-actor-id":"11111111-1111-1111-1111-111111111111"}},
+   "response":
+   {"status":200,
+    "headers":
+    {"content-length":"489",
+     "content-type":"application/json",
+     "date":"Wed, 12 Aug 2026 22:40:41 GMT",
+     "x-correlation-id":"9cc6fef4-958e-4d73-923b-07ac8d429f7f"},
+    "body":
+    {"createdAt":"2026-08-12T22:40:41.661207Z",
+     "organisationId":"6a892ae3-d66b-47c4-ade1-0098927f8464",
+     "purposeCode":"SUPP",
+     "id":"5636c28d-5fbd-45f0-afa3-fd196af96f93",
+     "createdBy":"11111111-1111-1111-1111-111111111111",
+     "valueDate":"2026-12-01",
+     "status":"draft",
+     "permittedTransitions":["cancel", "submit"],
+     "creditorName":"Pacific Rim Logistics Pte Ltd",
+     "amount":{"currency":"SGD", "minorUnits":50000},
+     "creditorAccount":"SG-SYNTH-88012345",
+     "debtorAccountId":"9331b2aa-1d58-4677-a07e-af99ebc77c7b"},
+    "bodyRaw":
+    "{\"createdAt\":\"2026-08-12T22:40:41.661207Z\",\"organisationId\":\"6a892ae3-d66b-47c4-ade1-0098927f8464\",\"purposeCode\":\"SUPP\",\"id\":\"5636c28d-5fbd-45f0-afa3-fd196af96f93\",\"createdBy\":\"11111111-1111-1111-1111-111111111111\",\"valueDate\":\"2026-12-01\",\"status\":\"draft\",\"permittedTransitions\":[\"cancel\",\"submit\"],\"creditorName\":\"Pacific Rim Logistics Pte Ltd\",\"amount\":{\"currency\":\"SGD\",\"minorUnits\":50000},\"creditorAccount\":\"SG-SYNTH-88012345\",\"debtorAccountId\":\"9331b2aa-1d58-4677-a07e-af99ebc77c7b\"}",
+    "bodySha256":
+    "1fce8bdc022c05045b89dd6ba6bbeed5440e5b786310e3da1663b277bbf5d7b5"},
+   "expected":{"status":200}},
+  {"n":13,
+   "id":"self-approval-refused",
+   "kind":"http",
+   "title":"Priya tries to approve her own payment",
+   "narrative":
+   "The reason is machine-readable \u2014 `self-approval` \u2014 rather than prose a client would have to parse.",
+   "request":
+   {"method":"POST",
+    "path":
+    "/payment-instructions/425737ad-88d7-46f0-8b12-7fb10ef21f71/approvals",
+    "headers":
+    {"content-type":"application/json",
+     "idempotency-key":"capture-uat005-approve-self",
+     "x-actor-id":"11111111-1111-1111-1111-111111111111"},
+    "body":{"decision":"approved"},
+    "bodyRaw":"{\"decision\":\"approved\"}"},
+   "response":
+   {"status":403,
+    "headers":
+    {"content-length":"412",
+     "content-type":"application/problem+json",
+     "date":"Wed, 12 Aug 2026 22:40:41 GMT",
+     "x-correlation-id":"2e942368-18f0-46dd-bbfe-ca9d3bc9fd0a"},
+    "body":
+    {"type":"https://clofin.dev/problems/forbidden",
+     "title":"Not permitted",
+     "status":403,
+     "detail":
+     "The actor who created this payment instruction may not approve it (segregation of duties)",
+     "instance":"2e942368-18f0-46dd-bbfe-ca9d3bc9fd0a",
+     "errors":
+     {"approvals-required":1,
+      "approvals-held":0,
+      "actor-limit-minor":null,
+      "currency":"SGD",
+      "created-by":"11111111-1111-1111-1111-111111111111",
+      "reason":"self-approval"}},
+    "bodyRaw":
+    "{\"type\":\"https:\\/\\/clofin.dev\\/problems\\/forbidden\",\"title\":\"Not permitted\",\"status\":403,\"detail\":\"The actor who created this payment instruction may not approve it (segregation of duties)\",\"instance\":\"2e942368-18f0-46dd-bbfe-ca9d3bc9fd0a\",\"errors\":{\"approvals-required\":1,\"approvals-held\":0,\"actor-limit-minor\":null,\"currency\":\"SGD\",\"created-by\":\"11111111-1111-1111-1111-111111111111\",\"reason\":\"self-approval\"}}",
+    "bodySha256":
+    "e88b6acfa342ed521bcd13ce7144f62a746c47aac7d5e40b76590554623ff5db"},
+   "expected":{"status":403}},
+  {"n":14,
+   "id":"grant-priya-approver",
+   "kind":"sql",
+   "title":"Grant Priya the approver role as well",
+   "narrative":
+   "So that the next attempt fails for a reason that is not a missing role.",
+   "statement":
+   "insert into actor_role (actor_id, role) values ('11111111-1111-1111-1111-111111111111','approver'); insert into approver_limit (actor_id, currency, limit_minor) values ('11111111-1111-1111-1111-111111111111','SGD',99999999);",
+   "result":{"ok":true, "rows":1}},
+  {"n":15,
+   "id":"self-approval-refused-again",
+   "kind":"http",
+   "title":"Priya, now an approver, tries again",
+   "narrative":
+   "Still refused, and for the same reason. Which roles an actor happens to hold is not what this refusal is about.",
+   "request":
+   {"method":"POST",
+    "path":
+    "/payment-instructions/425737ad-88d7-46f0-8b12-7fb10ef21f71/approvals",
+    "headers":
+    {"content-type":"application/json",
+     "idempotency-key":"capture-uat005-approve-self-2",
+     "x-actor-id":"11111111-1111-1111-1111-111111111111"},
+    "body":{"decision":"approved"},
+    "bodyRaw":"{\"decision\":\"approved\"}"},
+   "response":
+   {"status":403,
+    "headers":
+    {"content-length":"416",
+     "content-type":"application/problem+json",
+     "date":"Wed, 12 Aug 2026 22:40:41 GMT",
+     "x-correlation-id":"0b068f4a-2b2a-4129-96b0-c4d02a0cb8d1"},
+    "body":
+    {"type":"https://clofin.dev/problems/forbidden",
+     "title":"Not permitted",
+     "status":403,
+     "detail":
+     "The actor who created this payment instruction may not approve it (segregation of duties)",
+     "instance":"0b068f4a-2b2a-4129-96b0-c4d02a0cb8d1",
+     "errors":
+     {"approvals-required":1,
+      "approvals-held":0,
+      "actor-limit-minor":99999999,
+      "currency":"SGD",
+      "created-by":"11111111-1111-1111-1111-111111111111",
+      "reason":"self-approval"}},
+    "bodyRaw":
+    "{\"type\":\"https:\\/\\/clofin.dev\\/problems\\/forbidden\",\"title\":\"Not permitted\",\"status\":403,\"detail\":\"The actor who created this payment instruction may not approve it (segregation of duties)\",\"instance\":\"0b068f4a-2b2a-4129-96b0-c4d02a0cb8d1\",\"errors\":{\"approvals-required\":1,\"approvals-held\":0,\"actor-limit-minor\":99999999,\"currency\":\"SGD\",\"created-by\":\"11111111-1111-1111-1111-111111111111\",\"reason\":\"self-approval\"}}",
+    "bodySha256":
+    "440388e2c36beb1ce67ee75ee71e9d9ad20536dd960bc2ca05d2d4572a133395"},
+   "expected":{"status":403}},
+  {"n":16,
+   "id":"revoke-priya-approver",
+   "kind":"sql",
+   "title":"Remove the extra grant again",
+   "narrative":
+   "Leaving the organisation as it was before the demonstration.",
+   "statement":
+   "delete from approver_limit where actor_id = '11111111-1111-1111-1111-111111111111'; delete from actor_role where actor_id = '11111111-1111-1111-1111-111111111111' and role = 'approver';",
+   "result":{"ok":true, "rows":1}},
+  {"n":17,
+   "id":"approved-by-wei",
+   "kind":"http",
+   "title":"A different approver succeeds",
+   "narrative":
+   "SGD 500.00 is below the SGD 1,000.00 band, so one approval is enough; the response says how many were required and how many are held.",
+   "request":
+   {"method":"POST",
+    "path":
+    "/payment-instructions/425737ad-88d7-46f0-8b12-7fb10ef21f71/approvals",
+    "headers":
+    {"content-type":"application/json",
+     "idempotency-key":"capture-uat005-approve-wei",
+     "x-actor-id":"22222222-2222-2222-2222-222222222222"},
+    "body":{"decision":"approved"},
+    "bodyRaw":"{\"decision\":\"approved\"}"},
+   "response":
+   {"status":201,
+    "headers":
+    {"content-length":"818",
+     "content-type":"application/json",
+     "date":"Wed, 12 Aug 2026 22:40:41 GMT",
+     "location":
+     "/payment-instructions/425737ad-88d7-46f0-8b12-7fb10ef21f71/approvals/8614690c-c646-4036-b708-b2be95e9585d",
+     "x-correlation-id":"85c4d768-2950-4167-ae41-41817822f896"},
+    "body":
+    {"approval":
+     {"id":"8614690c-c646-4036-b708-b2be95e9585d",
+      "instructionId":"425737ad-88d7-46f0-8b12-7fb10ef21f71",
+      "actorId":"22222222-2222-2222-2222-222222222222",
+      "decision":"approved",
+      "decidedAt":"2026-08-12T22:40:41.750913Z",
+      "live":true},
+     "paymentInstruction":
+     {"createdAt":"2026-08-12T22:40:41.591700Z",
+      "organisationId":"6a892ae3-d66b-47c4-ade1-0098927f8464",
+      "purposeCode":"SUPP",
+      "id":"425737ad-88d7-46f0-8b12-7fb10ef21f71",
+      "createdBy":"11111111-1111-1111-1111-111111111111",
+      "valueDate":"2026-12-01",
+      "status":"approved",
+      "permittedTransitions":["amend", "cancel", "release"],
+      "creditorName":"Pacific Rim Logistics Pte Ltd",
+      "amount":{"currency":"SGD", "minorUnits":50000},
+      "creditorAccount":"SG-SYNTH-88012345",
+      "debtorAccountId":"9331b2aa-1d58-4677-a07e-af99ebc77c7b"},
+     "approvalsRequired":1,
+     "approvalsHeld":1,
+     "satisfied":true},
+    "bodyRaw":
+    "{\"approval\":{\"id\":\"8614690c-c646-4036-b708-b2be95e9585d\",\"instructionId\":\"425737ad-88d7-46f0-8b12-7fb10ef21f71\",\"actorId\":\"22222222-2222-2222-2222-222222222222\",\"decision\":\"approved\",\"decidedAt\":\"2026-08-12T22:40:41.750913Z\",\"live\":true},\"paymentInstruction\":{\"createdAt\":\"2026-08-12T22:40:41.591700Z\",\"organisationId\":\"6a892ae3-d66b-47c4-ade1-0098927f8464\",\"purposeCode\":\"SUPP\",\"id\":\"425737ad-88d7-46f0-8b12-7fb10ef21f71\",\"createdBy\":\"11111111-1111-1111-1111-111111111111\",\"valueDate\":\"2026-12-01\",\"status\":\"approved\",\"permittedTransitions\":[\"amend\",\"cancel\",\"release\"],\"creditorName\":\"Pacific Rim Logistics Pte Ltd\",\"amount\":{\"currency\":\"SGD\",\"minorUnits\":50000},\"creditorAccount\":\"SG-SYNTH-88012345\",\"debtorAccountId\":\"9331b2aa-1d58-4677-a07e-af99ebc77c7b\"},\"approvalsRequired\":1,\"approvalsHeld\":1,\"satisfied\":true}",
+    "bodySha256":
+    "717ed85f0091e001cbbd64c5c0ecdcad7a69a0e4086adfc616da348e60cec1b6"},
+   "expected":{"status":201}},
+  {"n":18,
+   "id":"evidence-pack",
+   "kind":"http",
+   "title":"The trail Rae reads",
+   "narrative":
+   "Every state change of the instruction, in order, each carrying the actor who caused it. No creditor name and no account identifier \u2014 only digests.",
+   "request":
+   {"method":"GET",
+    "path":"/audit/evidence/425737ad-88d7-46f0-8b12-7fb10ef21f71",
+    "headers":{"x-actor-id":"55555555-5555-5555-5555-555555555555"}},
+   "response":
+   {"status":200,
+    "headers":
+    {"content-length":"2163",
+     "content-type":"application/json",
+     "date":"Wed, 12 Aug 2026 22:40:41 GMT",
+     "x-correlation-id":"06b6eeba-1a1e-45a0-9dd3-ccf5be3cb29e"},
+    "body":
+    {"subjectId":"425737ad-88d7-46f0-8b12-7fb10ef21f71",
+     "subjectType":"payment-instruction",
+     "from":"2026-08-12T22:40:41.591700Z",
+     "to":"2026-08-12T22:40:41.750913Z",
+     "events":
+     [{"actorId":"11111111-1111-1111-1111-111111111111",
+       "afterDigest":
+       "v1:41408100fb241b04005e587ce8eb1b3d5963423aacf9c90fcc11c357f10fa66c",
+       "organisationId":"6a892ae3-d66b-47c4-ade1-0098927f8464",
+       "id":"494239ff-050f-4104-a528-cc38ad875383",
+       "occurredAt":"2026-08-12T22:40:41.591700Z",
+       "correlationId":"47619125-f292-41cc-86bb-f98bf9effb23",
+       "subjectId":"425737ad-88d7-46f0-8b12-7fb10ef21f71",
+       "action":"payment.created",
+       "subjectType":"payment-instruction"},
+      {"actorId":"11111111-1111-1111-1111-111111111111",
+       "afterDigest":
+       "v1:53d3a7ddc55134c8a489fb841409a1e733e1ccdf271008c9dc5f3572cfd45972",
+       "organisationId":"6a892ae3-d66b-47c4-ade1-0098927f8464",
+       "id":"474008c9-77b1-4342-b59b-940a579aa31e",
+       "occurredAt":"2026-08-12T22:40:41.638039Z",
+       "correlationId":"af47d2e0-e597-4f52-9892-0a4a8be31411",
+       "subjectId":"425737ad-88d7-46f0-8b12-7fb10ef21f71",
+       "action":"payment.submitted",
+       "subjectType":"payment-instruction",
+       "beforeDigest":
+       "v1:41408100fb241b04005e587ce8eb1b3d5963423aacf9c90fcc11c357f10fa66c"},
+      {"actorId":"22222222-2222-2222-2222-222222222222",
+       "afterDigest":
+       "v1:07a834b6d9206925fc860adc35abad13af1be7504ffd7f77c43d0765b8a99a1c",
+       "organisationId":"6a892ae3-d66b-47c4-ade1-0098927f8464",
+       "id":"81f3605c-f945-4a16-94a1-e8166aa0da22",
+       "occurredAt":"2026-08-12T22:40:41.750913Z",
+       "correlationId":"85c4d768-2950-4167-ae41-41817822f896",
+       "subjectId":"425737ad-88d7-46f0-8b12-7fb10ef21f71",
+       "action":"payment.approved",
+       "subjectType":"payment-instruction",
+       "beforeDigest":
+       "v1:53d3a7ddc55134c8a489fb841409a1e733e1ccdf271008c9dc5f3572cfd45972"},
+      {"actorId":"22222222-2222-2222-2222-222222222222",
+       "afterDigest":
+       "v1:b77b50364f52fb2beb9f9fd3ac55046229758855200f0988129d6433873140cf",
+       "organisationId":"6a892ae3-d66b-47c4-ade1-0098927f8464",
+       "id":"db06b71e-fb7a-41ba-82e8-66662614fec5",
+       "occurredAt":"2026-08-12T22:40:41.750913Z",
+       "correlationId":"85c4d768-2950-4167-ae41-41817822f896",
+       "subjectId":"8614690c-c646-4036-b708-b2be95e9585d",
+       "action":"approval.recorded",
+       "subjectType":"approval"}],
+     "count":4,
+     "limit":500,
+     "truncated":false},
+    "bodyRaw":
+    "{\"subjectId\":\"425737ad-88d7-46f0-8b12-7fb10ef21f71\",\"subjectType\":\"payment-instruction\",\"from\":\"2026-08-12T22:40:41.591700Z\",\"to\":\"2026-08-12T22:40:41.750913Z\",\"events\":[{\"actorId\":\"11111111-1111-1111-1111-111111111111\",\"afterDigest\":\"v1:41408100fb241b04005e587ce8eb1b3d5963423aacf9c90fcc11c357f10fa66c\",\"organisationId\":\"6a892ae3-d66b-47c4-ade1-0098927f8464\",\"id\":\"494239ff-050f-4104-a528-cc38ad875383\",\"occurredAt\":\"2026-08-12T22:40:41.591700Z\",\"correlationId\":\"47619125-f292-41cc-86bb-f98bf9effb23\",\"subjectId\":\"425737ad-88d7-46f0-8b12-7fb10ef21f71\",\"action\":\"payment.created\",\"subjectType\":\"payment-instruction\"},{\"actorId\":\"11111111-1111-1111-1111-111111111111\",\"afterDigest\":\"v1:53d3a7ddc55134c8a489fb841409a1e733e1ccdf271008c9dc5f3572cfd45972\",\"organisationId\":\"6a892ae3-d66b-47c4-ade1-0098927f8464\",\"id\":\"474008c9-77b1-4342-b59b-940a579aa31e\",\"occurredAt\":\"2026-08-12T22:40:41.638039Z\",\"correlationId\":\"af47d2e0-e597-4f52-9892-0a4a8be31411\",\"subjectId\":\"425737ad-88d7-46f0-8b12-7fb10ef21f71\",\"action\":\"payment.submitted\",\"subjectType\":\"payment-instruction\",\"beforeDigest\":\"v1:41408100fb241b04005e587ce8eb1b3d5963423aacf9c90fcc11c357f10fa66c\"},{\"actorId\":\"22222222-2222-2222-2222-222222222222\",\"afterDigest\":\"v1:07a834b6d9206925fc860adc35abad13af1be7504ffd7f77c43d0765b8a99a1c\",\"organisationId\":\"6a892ae3-d66b-47c4-ade1-0098927f8464\",\"id\":\"81f3605c-f945-4a16-94a1-e8166aa0da22\",\"occurredAt\":\"2026-08-12T22:40:41.750913Z\",\"correlationId\":\"85c4d768-2950-4167-ae41-41817822f896\",\"subjectId\":\"425737ad-88d7-46f0-8b12-7fb10ef21f71\",\"action\":\"payment.approved\",\"subjectType\":\"payment-instruction\",\"beforeDigest\":\"v1:53d3a7ddc55134c8a489fb841409a1e733e1ccdf271008c9dc5f3572cfd45972\"},{\"actorId\":\"22222222-2222-2222-2222-222222222222\",\"afterDigest\":\"v1:b77b50364f52fb2beb9f9fd3ac55046229758855200f0988129d6433873140cf\",\"organisationId\":\"6a892ae3-d66b-47c4-ade1-0098927f8464\",\"id\":\"db06b71e-fb7a-41ba-82e8-66662614fec5\",\"occurredAt\":\"2026-08-12T22:40:41.750913Z\",\"correlationId\":\"85c4d768-2950-4167-ae41-41817822f896\",\"subjectId\":\"8614690c-c646-4036-b708-b2be95e9585d\",\"action\":\"approval.recorded\",\"subjectType\":\"approval\"}],\"count\":4,\"limit\":500,\"truncated\":false}",
+    "bodySha256":
+    "ed70e37338d287418faed35cee7febdad4a7529271af96f567816223ac393bf6"},
+   "expected":{"status":200}},
+  {"n":19,
+   "id":"audit-read-refused",
+   "kind":"http",
+   "title":"An operator cannot read the trail",
+   "narrative":
+   "Priya holds no `audit/read`. An operator able to read the whole organisation's trail could see which approvers act on what and when.",
+   "request":
+   {"method":"GET",
+    "path":"/audit/events",
+    "headers":{"x-actor-id":"11111111-1111-1111-1111-111111111111"}},
+   "response":
+   {"status":403,
+    "headers":
+    {"content-length":"236",
+     "content-type":"application/problem+json",
+     "date":"Wed, 12 Aug 2026 22:40:41 GMT",
+     "x-correlation-id":"db88c596-a16c-4fb2-85c7-2c9e7fcff972"},
+    "body":
+    {"type":"https://clofin.dev/problems/forbidden",
+     "title":"Not permitted",
+     "status":403,
+     "detail":"This actor may not read",
+     "instance":"db88c596-a16c-4fb2-85c7-2c9e7fcff972",
+     "errors":{"permission":"audit/read", "actor-status":"active"}},
+    "bodyRaw":
+    "{\"type\":\"https:\\/\\/clofin.dev\\/problems\\/forbidden\",\"title\":\"Not permitted\",\"status\":403,\"detail\":\"This actor may not read\",\"instance\":\"db88c596-a16c-4fb2-85c7-2c9e7fcff972\",\"errors\":{\"permission\":\"audit\\/read\",\"actor-status\":\"active\"}}",
+    "bodySha256":
+    "9e0f81926aa8d72276e0fde981d7a854c60840c637e7080af0c47791b70bff6b"},
+   "expected":{"status":403}}],
+ "sandTable":null,
+ "journal":{"entries":[], "entryCount":0},
+ "auditEvents":
+ {"events":
+  [{"correlation_id":"0ecc27c1-cb83-4a38-b468-6b4b826bedc0",
+    "organisation_id":"6a892ae3-d66b-47c4-ade1-0098927f8464",
+    "after_digest":
+    "v1:d9714e43742a1ce1563881e58a07af26f8d75e7bfd935986c0f2dcd73c100314",
+    "id":"113f7827-bafe-4ef8-8eb2-fcc6c6def332",
+    "actor_id":null,
+    "before_digest":null,
+    "action":"organisation.created",
+    "subject_type":"organisation",
+    "subject_id":"6a892ae3-d66b-47c4-ade1-0098927f8464",
+    "occurred_at":"2026-08-12T22:40:41.499980Z"},
+   {"correlation_id":"9882fb14-ea57-48b7-a1fb-b9488f988ff9",
+    "organisation_id":"6a892ae3-d66b-47c4-ade1-0098927f8464",
+    "after_digest":
+    "v1:c2c0a3f09a7dc4c96a9bf22d0c605283758868ac8a429a52dc5919cedab56747",
+    "id":"a3ac2926-07fa-470a-b262-592f894f60c8",
+    "actor_id":"44444444-4444-4444-4444-444444444444",
+    "before_digest":null,
+    "action":"account.created",
+    "subject_type":"account",
+    "subject_id":"9331b2aa-1d58-4677-a07e-af99ebc77c7b",
+    "occurred_at":"2026-08-12T22:40:41.561529Z"},
+   {"correlation_id":"47619125-f292-41cc-86bb-f98bf9effb23",
+    "organisation_id":"6a892ae3-d66b-47c4-ade1-0098927f8464",
+    "after_digest":
+    "v1:41408100fb241b04005e587ce8eb1b3d5963423aacf9c90fcc11c357f10fa66c",
+    "id":"494239ff-050f-4104-a528-cc38ad875383",
+    "actor_id":"11111111-1111-1111-1111-111111111111",
+    "before_digest":null,
+    "action":"payment.created",
+    "subject_type":"payment-instruction",
+    "subject_id":"425737ad-88d7-46f0-8b12-7fb10ef21f71",
+    "occurred_at":"2026-08-12T22:40:41.591700Z"},
+   {"correlation_id":"af47d2e0-e597-4f52-9892-0a4a8be31411",
+    "organisation_id":"6a892ae3-d66b-47c4-ade1-0098927f8464",
+    "after_digest":
+    "v1:53d3a7ddc55134c8a489fb841409a1e733e1ccdf271008c9dc5f3572cfd45972",
+    "id":"474008c9-77b1-4342-b59b-940a579aa31e",
+    "actor_id":"11111111-1111-1111-1111-111111111111",
+    "before_digest":
+    "v1:41408100fb241b04005e587ce8eb1b3d5963423aacf9c90fcc11c357f10fa66c",
+    "action":"payment.submitted",
+    "subject_type":"payment-instruction",
+    "subject_id":"425737ad-88d7-46f0-8b12-7fb10ef21f71",
+    "occurred_at":"2026-08-12T22:40:41.638039Z"},
+   {"correlation_id":"b2212ebf-fbc6-4489-b830-ecb9079d5cb3",
+    "organisation_id":"6a892ae3-d66b-47c4-ade1-0098927f8464",
+    "after_digest":
+    "v1:91ed29f7de251471ecb85c083ca7eb7c5e6d1dc93c63498c69a963c1e13d3b9a",
+    "id":"6d9603b5-7b01-418a-8137-0174a6b61e29",
+    "actor_id":"11111111-1111-1111-1111-111111111111",
+    "before_digest":null,
+    "action":"payment.created",
+    "subject_type":"payment-instruction",
+    "subject_id":"5636c28d-5fbd-45f0-afa3-fd196af96f93",
+    "occurred_at":"2026-08-12T22:40:41.661207Z"},
+   {"correlation_id":"85c4d768-2950-4167-ae41-41817822f896",
+    "organisation_id":"6a892ae3-d66b-47c4-ade1-0098927f8464",
+    "after_digest":
+    "v1:07a834b6d9206925fc860adc35abad13af1be7504ffd7f77c43d0765b8a99a1c",
+    "id":"81f3605c-f945-4a16-94a1-e8166aa0da22",
+    "actor_id":"22222222-2222-2222-2222-222222222222",
+    "before_digest":
+    "v1:53d3a7ddc55134c8a489fb841409a1e733e1ccdf271008c9dc5f3572cfd45972",
+    "action":"payment.approved",
+    "subject_type":"payment-instruction",
+    "subject_id":"425737ad-88d7-46f0-8b12-7fb10ef21f71",
+    "occurred_at":"2026-08-12T22:40:41.750913Z"},
+   {"correlation_id":"85c4d768-2950-4167-ae41-41817822f896",
+    "organisation_id":"6a892ae3-d66b-47c4-ade1-0098927f8464",
+    "after_digest":
+    "v1:b77b50364f52fb2beb9f9fd3ac55046229758855200f0988129d6433873140cf",
+    "id":"db06b71e-fb7a-41ba-82e8-66662614fec5",
+    "actor_id":"22222222-2222-2222-2222-222222222222",
+    "before_digest":null,
+    "action":"approval.recorded",
+    "subject_type":"approval",
+    "subject_id":"8614690c-c646-4036-b708-b2be95e9585d",
+    "occurred_at":"2026-08-12T22:40:41.750913Z"}],
+  "count":7}}

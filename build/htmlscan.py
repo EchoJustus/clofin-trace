@@ -1,0 +1,152 @@
+"""A small reader for the built pages, shared by the two checks.
+
+The checks work over the **built output**, not over the templates that made
+it: a check that reads the same data the renderer read would only prove the
+renderer is self-consistent. So the pages are parsed back with the standard
+library and inspected as a reader's browser would see them.
+
+Nothing here is specific to either check — it extracts marked elements, their
+ancestry, and the page's visible text, and leaves the judging to the caller.
+"""
+
+from __future__ import annotations
+
+import re
+from html.parser import HTMLParser
+
+VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link",
+        "meta", "param", "source", "track", "wbr"}
+
+# A sentence never runs across one of these. Recording the boundary matters:
+# text joined across two elements can produce a sentence that contains a word
+# from its neighbour, and a check asking whether a qualifier is *in the same
+# sentence* would then pass on a claim that never carried one.
+BLOCK = {"p", "div", "li", "ul", "ol", "h1", "h2", "h3", "h4", "h5", "h6",
+         "td", "th", "tr", "table", "thead", "tbody", "section", "article",
+         "header", "footer", "nav", "main", "blockquote", "figure",
+         "figcaption", "dl", "dt", "dd", "pre", "br", "title", "aside"}
+
+MARKERS = ("data-captured", "data-captured-json", "data-captured-markdown",
+           "data-scope-statement")
+
+
+class Marked:
+    """One marked element: its attribute, its value, its text and its ancestry."""
+
+    def __init__(self, marker: str, value: str, ancestry: list[str]):
+        self.marker = marker
+        self.value = value
+        self.ancestry = ancestry
+        self.text = ""
+
+    def __repr__(self) -> str:  # pragma: no cover - diagnostics only
+        return f"<{self.marker}={self.value!r} text={self.text[:40]!r}>"
+
+
+class PageReader(HTMLParser):
+    """Collects marked elements and the page's visible text."""
+
+    def __init__(self, exempt_ancestors: tuple[str, ...] = ()):
+        super().__init__(convert_charrefs=True)
+        self.exempt_ancestors = exempt_ancestors
+        self.stack: list[str] = []
+        self.marked: list[Marked] = []
+        self.open_marked: list[tuple[Marked, int]] = []
+        self.text_parts: list[str] = []
+        self.exempt_text_parts: list[str] = []
+        self._exempt_depth = 0
+
+    # -- ancestry ----------------------------------------------------------
+
+    def _descriptor(self, tag: str, attrs: dict[str, str]) -> str:
+        bits = [tag]
+        if attrs.get("id"):
+            bits.append("#" + attrs["id"])
+        if attrs.get("class"):
+            bits.append("." + ".".join(attrs["class"].split()))
+        return "".join(bits)
+
+    def handle_starttag(self, tag, attrs):
+        attrs = {k: (v or "") for k, v in attrs}
+        if tag in BLOCK:
+            self._break()
+        descriptor = self._descriptor(tag, attrs)
+        if tag not in VOID:
+            self.stack.append(descriptor)
+        exempt_here = any(descriptor.startswith(prefix) or prefix in descriptor
+                          for prefix in self.exempt_ancestors)
+        if exempt_here and tag not in VOID:
+            self._exempt_depth += 1
+            self._exempt_marker = len(self.stack)
+        for marker in MARKERS:
+            if marker in attrs:
+                element = Marked(marker, attrs[marker], list(self.stack))
+                self.marked.append(element)
+                if tag not in VOID:
+                    self.open_marked.append((element, len(self.stack)))
+
+    def handle_endtag(self, tag):
+        if tag in BLOCK:
+            self._break()
+        while self.open_marked and self.open_marked[-1][1] > len(self.stack):
+            self.open_marked.pop()
+        if self.stack:
+            if self._exempt_depth and getattr(self, "_exempt_marker", 0) == len(self.stack):
+                self._exempt_depth -= 1
+            self.stack.pop()
+        self.open_marked = [(e, d) for e, d in self.open_marked if d <= len(self.stack)]
+
+    def _break(self):
+        if self._exempt_depth:
+            self.exempt_text_parts.append("\n")
+        else:
+            self.text_parts.append("\n")
+
+    def handle_data(self, data):
+        for element, _ in self.open_marked:
+            element.text += data
+        if "script" in self.stack or "style" in self.stack:
+            return
+        if self._exempt_depth:
+            self.exempt_text_parts.append(data)
+        else:
+            self.text_parts.append(data)
+
+    # -- results -----------------------------------------------------------
+
+    @property
+    def text(self) -> str:
+        """Visible text outside any exempt region, with block boundaries kept."""
+        return re.sub(r"[ \t]+", " ", "".join(self.text_parts))
+
+    @property
+    def all_text(self) -> str:
+        """Every visible word on the page, exempt regions included."""
+        return re.sub(r"[ \t]+", " ", "".join(self.text_parts + self.exempt_text_parts))
+
+    def by_marker(self, marker: str) -> list[Marked]:
+        return [m for m in self.marked if m.marker == marker]
+
+    def within(self, element: Marked, ancestor_fragment: str) -> bool:
+        return any(ancestor_fragment in a for a in element.ancestry)
+
+
+def read(markup: str, exempt_ancestors: tuple[str, ...] = ()) -> PageReader:
+    reader = PageReader(exempt_ancestors)
+    reader.feed(markup)
+    reader.close()
+    return reader
+
+
+SENTENCE_END = re.compile(r"(?<=[.!?])[ \t]+|\n+")
+
+
+def sentences(text: str) -> list[str]:
+    """Visible text as sentences.
+
+    Split at sentence-ending punctuation **and** at the block boundaries
+    `PageReader` recorded, so that two adjacent elements never become one
+    sentence — see `BLOCK`.
+    """
+    return [re.sub(r"\s+", " ", s).strip()
+            for s in SENTENCE_END.split(text) if s.strip()]
