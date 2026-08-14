@@ -1,0 +1,5 @@
+# The site is built from `fixtures/` by `build/build.py`; the built output is
+# not committed. CI builds it, checks it, and publishes it.
+_site/
+__pycache__/
+*.pyc

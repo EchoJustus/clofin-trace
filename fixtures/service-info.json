@@ -1,0 +1,46 @@
+{"schemaVersion":"clofin.capture/1",
+ "fixture":"GET /",
+ "provenance":
+ {"schemaVersion":"clofin.capture/1",
+  "sourceCommit":"5c7b4badced5e807e1022fce44cbcad38c6d2095",
+  "sourceCommitShort":"5c7b4ba",
+  "sourceRef":"ref-1",
+  "sourceUrl":
+  "https://github.com/EchoJustus/clofin-core/tree/5c7b4badced5e807e1022fce44cbcad38c6d2095",
+  "tag":"ref-1",
+  "tagKind":"lightweight",
+  "releaseAudit":
+  {"label":"PARTIAL",
+   "statement":
+   "RELEASE AUDIT: PARTIAL. Charter items 1-4 of 8 were performed (migrations replayed from empty; full suite; cross-document consistency; the partial-set sweep). Items 5-7 were NOT performed - standing-lessons compliance, known-debt reconciliation, and the synthetic-data/neutrality sweep - because the external auditor's compute quota was exhausted mid-audit. Closed under the recorded resource-interruption fallback; the uncovered items carry forward as mandatory-first scope for ref-2.",
+   "source":"release-annotation-file",
+   "sourceRef":"docs/releases/ref-1.annotation.txt",
+   "sourceSha256":
+   "cbdc34fd5c4ac5c41076d02020a20aac7377446b479bfb0b744ea8c780fdf8e9"},
+  "capturedAt":"2026-08-12T22:40:33.471124852Z",
+  "schemaVersionApplied":"0011",
+  "harness":
+  {"commit":"00c148df1610a7c563ea27d0eae4e85155388f01", "dirty":
+                                                        true}},
+ "request":{"method":"GET", "path":"/"},
+ "response":
+ {"status":200,
+  "headers":
+  {"content-length":"368",
+   "content-type":"application/json",
+   "date":"Wed, 12 Aug 2026 22:40:41 GMT",
+   "x-correlation-id":"e64f8623-538b-465d-a6aa-47be56d9cbb4"},
+  "bodyRaw":
+  "{\"service\":\"clofin-core\",\"description\":\"Open-source enterprise payments and reconciliation core\",\"environment\":\"dev\",\"disclaimer\":\"CloFin operates on synthetic data only. It is not connected to any bank, payment scheme or central bank, holds no regulatory authorisation, and never processes real funds.\",\"documentation\":\"https:\\/\\/github.com\\/EchoJustus\\/clofin-core\"}",
+  "body":
+  {"service":"clofin-core",
+   "description":
+   "Open-source enterprise payments and reconciliation core",
+   "environment":"dev",
+   "disclaimer":
+   "CloFin operates on synthetic data only. It is not connected to any bank, payment scheme or central bank, holds no regulatory authorisation, and never processes real funds.",
+   "documentation":"https://github.com/EchoJustus/clofin-core"},
+  "bodySha256":
+  "173858acdf40c65f5ba58689ec86cf088138a812cb7a87a7d20a00c2d84c2bf7"},
+ "disclaimer":
+ "CloFin operates on synthetic data only. It is not connected to any bank, payment scheme or central bank, holds no regulatory authorisation, and never processes real funds."}

@@ -1,0 +1,48 @@
+{"schemaVersion":"clofin.capture/1",
+ "provenance":
+ {"schemaVersion":"clofin.capture/1",
+  "sourceCommit":"5c7b4badced5e807e1022fce44cbcad38c6d2095",
+  "sourceCommitShort":"5c7b4ba",
+  "sourceRef":"ref-1",
+  "sourceUrl":
+  "https://github.com/EchoJustus/clofin-core/tree/5c7b4badced5e807e1022fce44cbcad38c6d2095",
+  "tag":"ref-1",
+  "tagKind":"lightweight",
+  "releaseAudit":
+  {"label":"PARTIAL",
+   "statement":
+   "RELEASE AUDIT: PARTIAL. Charter items 1-4 of 8 were performed (migrations replayed from empty; full suite; cross-document consistency; the partial-set sweep). Items 5-7 were NOT performed - standing-lessons compliance, known-debt reconciliation, and the synthetic-data/neutrality sweep - because the external auditor's compute quota was exhausted mid-audit. Closed under the recorded resource-interruption fallback; the uncovered items carry forward as mandatory-first scope for ref-2.",
+   "source":"release-annotation-file",
+   "sourceRef":"docs/releases/ref-1.annotation.txt",
+   "sourceSha256":
+   "cbdc34fd5c4ac5c41076d02020a20aac7377446b479bfb0b744ea8c780fdf8e9"},
+  "capturedAt":"2026-08-12T22:40:33.471124852Z",
+  "schemaVersionApplied":"0011",
+  "harness":
+  {"commit":"00c148df1610a7c563ea27d0eae4e85155388f01", "dirty":
+                                                        true}},
+ "fixture":
+ {"path":"service-info.json",
+  "sha256":
+  "3ff8be8767c74e45d3d0adc41c5fddcdc4a794d4617e554bdb01ee17375bdcab"},
+ "quotations":
+ {"path":"quotations.json",
+  "sha256":
+  "a43a6013c82baf3f79ba58e8a75a0f67ea50d2845aa1b46700ec9c04e0e7b2f5"},
+ "bundles":
+ [{"id":"segregation-of-duties-refused",
+   "title":"Segregation of duties, attempted and refused",
+   "path":"bundles/segregation-of-duties-refused.json",
+   "sha256":
+   "c661f5a2b5b2fca36f91ff2495164553b51c29761ece1757126d6b0e31324132"},
+  {"id":"settlement-batch-misbehaves",
+   "title":
+   "A settlement batch, and the four ways a scheme misbehaves",
+   "path":"bundles/settlement-batch-misbehaves.json",
+   "sha256":
+   "a43df5d04000f911f453f143dbc273296b895184f475b7c4d11ca45de247117b"},
+  {"id":"evidence-pack-timeline",
+   "title":"The evidence pack an auditor extracts",
+   "path":"bundles/evidence-pack-timeline.json",
+   "sha256":
+   "fc25a19e87d197a898cb7bc896b50ecc0a7af86a4b2cdf9d636252ce7c8d3abe"}]}

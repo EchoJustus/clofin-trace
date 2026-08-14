@@ -1,0 +1,45 @@
+name: Build and check
+
+# Exactly two automated checks run here, and there are deliberately no others.
+# `clofin-trace` owns no truth: it renders captured output of an audited commit
+# in `clofin-core`, and a third guarantee asserted from this repository would be
+# one it is not entitled to make. See ADR-0020 in clofin-core.
+
+on:
+  push:
+    branches: ["main", "claude/**"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-check:
+    name: Build the walkthrough and check it
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # No dependencies to install: the build and both checks are the Python
+      # standard library. A walkthrough that insisted on a package manager to
+      # render captured JSON would be harder to reproduce than the system it
+      # describes.
+      - name: Build the site
+        run: python3 build/build.py --fixtures fixtures --out _site
+
+      - name: provenance-present
+        run: python3 build/checks/provenance_present.py --fixtures fixtures --site _site
+
+      - name: disclaimer-verbatim
+        run: python3 build/checks/disclaimer_verbatim.py --fixtures fixtures --site _site
