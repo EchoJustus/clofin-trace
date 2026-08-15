@@ -67,7 +67,7 @@ Then open `_site/index.html`. The published site is the same output, built by
 
 | Check | What it fails on |
 |---|---|
-| **`provenance-present`** | A fixture missing any part of its stamp; a manifest digest that no longer matches its file; a page that does not show the tag, the commit and the tag's release-audit coverage together and in-frame; a displayed figure that does not resolve to the captured value it names; a sand-table cell that no longer equals the step it was read from; a sentence that attaches a word of assurance to the source state without the captured coverage qualifier beside it |
+| **`provenance-present`** | A fixture missing any part of its stamp; a manifest digest that no longer matches its file; a page that does not show the tag, the commit and the tag's release-audit coverage together and in-frame; a displayed figure that does not resolve to the captured value it names; a sand-table cell that no longer equals the step it was read from; a sentence that attaches a word of assurance to the source state without the captured coverage qualifier beside it; a file published under `_site/fixtures/` that is not its committed counterpart byte for byte, is missing, or has no counterpart at all |
 | **`disclaimer-verbatim`** | Any rendering of the scope statement — on any page, or in this README — that is not the captured `GET /` response byte for byte, including a softened or shortened one |
 
 A third check here would be a guarantee this repository is not entitled to
@@ -87,7 +87,9 @@ build refuses to emit a page containing any of them.
 ## Fixtures
 
 `fixtures/` holds the capture output, published with the site so that any
-figure can be checked:
+figure can be checked. What the site serves under `_site/fixtures/` is compared
+with what is committed here, byte for byte, by `provenance-present` — so the
+copy a reader downloads is the copy the checks ran against:
 
 | File | |
 |---|---|

@@ -4,7 +4,7 @@
     python3 build/checks/provenance_present.py --fixtures fixtures --site _site
 
 Provenance is not one field. It is the whole answer to *where did this figure
-come from*, and this check asks that question of four things:
+come from*, and this check asks that question of five things:
 
 1. **Every fixture carries a complete stamp.** The same field list the capture
    harness enforces before it writes — restated here rather than trusted,
@@ -33,9 +33,23 @@ come from*, and this check asks that question of four things:
    public artifact. The provenance block itself is exempt: it is where the
    qualifier lives.
 
-The fourth is here rather than in a third check because the qualifier *is*
-provenance. `clofin-trace` runs exactly two checks (ADR-0020), and a third one
-would be a guarantee this repository is not entitled to make.
+5. **The fixtures published beside the pages are the committed ones, byte for
+   byte.** Everything above validates `fixtures/`. What a reader who follows
+   the site's own "check it yourself" link actually downloads is the *copy*
+   under `_site/fixtures/`, and a copy nothing compares is a copy nothing
+   guarantees. Every file is compared both ways: a differing byte, a missing
+   counterpart or an extra file fails, naming the file. Today the committed
+   set and the published copy are produced and deployed inside a single CI
+   job, so the seam is theoretical — but a guard that holds only because of
+   the current shape of a workflow is a convention, not an enforcement point,
+   and it stops holding the first time anyone changes how the site is built or
+   deployed.
+
+The fourth and fifth are here rather than in checks of their own for the same
+reason: the coverage qualifier *is* provenance, and so is whether the bytes a
+reader downloads are the bytes that were checked. `clofin-trace` runs exactly
+two checks (ADR-0020), and a third one would be a guarantee this repository is
+not entitled to make.
 """
 
 from __future__ import annotations
@@ -140,6 +154,69 @@ def check_page(fixtures: Fixtures, name: str, markup: str, coverage_label: str) 
     return problems
 
 
+# --------------------------------------------------------------------------
+# 5. the published copy, against the committed one
+# --------------------------------------------------------------------------
+
+def files_under(root: Path) -> dict[str, Path]:
+    """Every file below `root`, keyed by its path relative to it."""
+    if not root.is_dir():
+        return {}
+    return {path.relative_to(root).as_posix(): path
+            for path in sorted(root.rglob("*")) if path.is_file()}
+
+
+def byte_at(data: bytes, index: int) -> str:
+    """How to name the byte at `index` in a report, including past the end."""
+    return f"0x{data[index]:02x}" if index < len(data) else "end of file"
+
+
+def first_difference(left: bytes, right: bytes) -> int:
+    """The offset of the first differing byte, or the length of the shorter."""
+    for index in range(min(len(left), len(right))):
+        if left[index] != right[index]:
+            return index
+    return min(len(left), len(right))
+
+
+def published_copy_problems(fixtures_root: Path, site_root: Path) -> list[str]:
+    """Every way the published fixtures are not the committed fixtures.
+
+    Compared as bytes rather than as parsed JSON: a reader who downloads
+    `_site/fixtures/manifest.json` and hashes it is checking bytes, so this
+    check has to fail on anything that would change that hash — reordered
+    keys, a rewritten float, a stripped trailing newline — and not only on
+    what happens to survive a round trip through `json.loads`.
+    """
+    published_root = site_root / "fixtures"
+    if not published_root.is_dir():
+        return [f"{published_root}: the fixtures were not published beside the pages, so "
+                f"nothing the site invites the reader to check is there to be checked"]
+
+    committed = files_under(fixtures_root)
+    published = files_under(published_root)
+
+    problems: list[str] = []
+    for name in sorted(set(committed) | set(published)):
+        if name not in published:
+            problems.append(f"{published_root / name}: missing — {fixtures_root / name} is "
+                            f"committed but was not published beside the pages")
+            continue
+        if name not in committed:
+            problems.append(f"{published_root / name}: published, but there is no "
+                            f"{fixtures_root / name} it could have come from")
+            continue
+        source = committed[name].read_bytes()
+        copy = published[name].read_bytes()
+        if copy != source:
+            at = first_difference(source, copy)
+            problems.append(
+                f"{published_root / name}: differs from {fixtures_root / name} at byte {at} "
+                f"({byte_at(source, at)} committed, {byte_at(copy, at)} published; "
+                f"{len(source)} bytes committed, {len(copy)} published)")
+    return problems
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fixtures", default="fixtures")
@@ -164,6 +241,8 @@ def main() -> int:
         problems += check_page(fixtures, page.name, page.read_text(encoding="utf-8"),
                                coverage_label)
 
+    problems += published_copy_problems(Path(args.fixtures), Path(args.site))
+
     if problems:
         print("provenance-present FAILED", file=sys.stderr)
         for problem in problems:
@@ -172,9 +251,11 @@ def main() -> int:
         return 1
 
     prov = fixtures.provenance()
+    published = files_under(Path(args.site) / "fixtures")
     print(f"provenance-present OK — {len(pages)} page(s) and "
           f"{len(fixtures.bundles) + 2} fixture(s), all stamped "
-          f"{prov['tag']} {prov['sourceCommitShort']}, release audit: {coverage_label}.")
+          f"{prov['tag']} {prov['sourceCommitShort']}, release audit: {coverage_label}; "
+          f"{len(published)} published file(s) byte-identical to {args.fixtures}/.")
     return 0
 
 
