@@ -6,12 +6,15 @@
 Provenance is not one field. It is the whole answer to *where did this figure
 come from*, and this check asks that question of four things:
 
-1. **Every fixture carries a complete stamp.** The same field list the capture
-   harness enforces before it writes — restated here rather than trusted,
-   because this repository is the one outside release-audit scope and its job
-   is to check the artifact in front of it. The manifest's digests are
-   compared with the files themselves, and every fixture in the set must name
-   one source commit.
+1. **Every fixture carries a complete stamp, and the published copy is the
+   committed one.** The same field list the capture harness enforces before it
+   writes — restated here rather than trusted, because this repository is the
+   one outside release-audit scope and its job is to check the artifact in
+   front of it. The manifest's digests are compared with the files themselves,
+   and every fixture in the set must name one source commit. Those digests
+   bind `fixtures/`; what a reader downloads when they follow *check it
+   yourself* is the copy published beside the pages, so that copy is compared
+   with the committed one file for file, byte for byte.
 
 2. **Every page displays the tag, the commit and the tag's release-audit
    coverage, together and in-frame.** Not in a footer: a screenshot crops a
@@ -69,6 +72,70 @@ def resolve(fixtures: Fixtures, reference: str):
 
 def strip_markdown(text: str) -> str:
     return text.replace("`", "").replace("**", "")
+
+
+# --------------------------------------------------------------------------
+# 1 (continued) — the published copy is the committed one
+# --------------------------------------------------------------------------
+
+def first_difference(committed: bytes, published: bytes) -> str:
+    """Where two files stop agreeing, in the terms needed to fix it.
+
+    Named like `disclaimer-verbatim`'s character offset, and for the same
+    reason: "these files differ" sends the reader to a diff, and the report is
+    more useful than the diff if it says where.
+    """
+    for offset, (want, got) in enumerate(zip(committed, published)):
+        if want != got:
+            return f"first differs at byte {offset}: committed {want:#04x}, published {got:#04x}"
+    return (f"identical for the first {min(len(committed), len(published))} bytes, but "
+            f"committed is {len(committed)} bytes and published is {len(published)}")
+
+
+def published_copy_problems(fixture_root: Path, site_root: Path) -> list[str]:
+    """Every way the fixtures published beside the pages differ from `fixtures/`.
+
+    The manifest's digests bind the committed tree. The copy a reader actually
+    downloads is the one the build published, and until this ran nothing
+    compared those two sets of bytes: the site could serve a fixture saying
+    anything, and both checks would stay green because both read the committed
+    file instead.
+
+    Today the copy is a `shutil.copytree` inside the same job that deploys it,
+    so the two cannot drift — but that is a fact about the workflow's topology,
+    not a property of the artifact, and it stops being true the first time
+    anyone changes how the site is built or deployed. A guard that exists only
+    as an argument about which job does what is a convention; comparing the
+    bytes makes it an enforcement point (**L-13**).
+
+    Both directions, because only one of them is the obvious one (**L-6**): a
+    file that differs, a committed file the build did not publish, and a
+    published file with no committed counterpart are each a failure, and each
+    names the file.
+    """
+    published_root = site_root / "fixtures"
+    if not published_root.is_dir():
+        return [f"{published_root}/: the fixtures were not published beside the pages"]
+
+    def files(root: Path) -> dict[str, Path]:
+        return {str(path.relative_to(root)): path
+                for path in sorted(root.rglob("*")) if path.is_file()}
+
+    committed, published = files(fixture_root), files(published_root)
+    problems = []
+    for relative in sorted(set(committed) - set(published)):
+        problems.append(f"{published_root}/{relative}: missing — {fixture_root}/{relative} is "
+                        f"committed, and the build did not publish it")
+    for relative in sorted(set(published) - set(committed)):
+        problems.append(f"{published_root}/{relative}: published, but there is no "
+                        f"{fixture_root}/{relative} it could have come from")
+    for relative in sorted(set(committed) & set(published)):
+        want = committed[relative].read_bytes()
+        got = published[relative].read_bytes()
+        if want != got:
+            problems.append(f"{published_root}/{relative}: not byte-identical to "
+                            f"{fixture_root}/{relative} — {first_difference(want, got)}")
+    return problems
 
 
 def check_page(fixtures: Fixtures, name: str, markup: str, coverage_label: str) -> list[str]:
@@ -157,6 +224,8 @@ def main() -> int:
               file=sys.stderr)
         return 1
 
+    problems += published_copy_problems(Path(args.fixtures), Path(args.site))
+
     pages = sorted(Path(args.site).glob("*.html"))
     if not pages:
         problems.append(f"{args.site}: no pages were built")
@@ -174,7 +243,8 @@ def main() -> int:
     prov = fixtures.provenance()
     print(f"provenance-present OK — {len(pages)} page(s) and "
           f"{len(fixtures.bundles) + 2} fixture(s), all stamped "
-          f"{prov['tag']} {prov['sourceCommitShort']}, release audit: {coverage_label}.")
+          f"{prov['tag']} {prov['sourceCommitShort']}, release audit: {coverage_label}; "
+          f"the published fixtures are byte-identical to the committed ones.")
     return 0
 
 

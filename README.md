@@ -7,6 +7,8 @@ payments and reconciliation core.
 **This repository contains no CloFin system code and enforces no controls.**
 It presents captured output; it computes nothing.
 
+The built walkthrough is served at <https://echojustus.github.io/clofin-trace/>.
+
 ## What this site shows
 
 Every figure on this site is **replayed captured output** of
