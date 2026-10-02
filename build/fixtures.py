@@ -93,8 +93,8 @@ REQUIRED_PROVENANCE = [
     (["schemaVersionApplied"], lambda v: isinstance(v, str)
      and re.fullmatch(r"\d{4}", v) is not None),
     # How the capture established that the process it interrogated was the one
-    # it started — exactly one of the two values the harness can stamp. What
-    # each establishes is clofin-core ADR-0027 §3a's to say, not this file's.
+    # it started — exactly one of the two values the harness can stamp. The two
+    # modes are described in clofin-core ADR-0027 §3a, not in this file.
     (["identityBinding"], lambda v: v in IDENTITY_BINDINGS),
     (["harness", "commit"], lambda v: isinstance(v, str) and v.strip() != ""),
 ]
@@ -225,7 +225,7 @@ class Fixtures:
         two must be the same string, byte for byte — a fixture whose service
         reported one commit while its stamp names another is a capture of
         something other than what it says (lesson L-19, on the consumer's
-        side). Read from the raw body, because that is what the service sent.
+        side). Read from the raw body the capture recorded.
 
         A `GET /` without the field is not a failure here: `ref-1` predates it,
         and the stamp says which binding such a capture used.
@@ -280,9 +280,10 @@ class Fixtures:
         """The scope statement, from the captured `GET /` body itself.
 
         Read out of `response.bodyRaw` rather than out of the convenience
-        field beside it: the raw body is what the service sent, and the whole
-        value of `disclaimer-verbatim` is that the string on the page came
-        from those bytes.
+        field beside it: the raw body is the capture's record of what the
+        service sent (from `ref-2` on, with the run's instance id replaced by
+        the harness's marker), and the whole value of `disclaimer-verbatim` is
+        that the string on the page came from those bytes.
         """
         body = json.loads(self.service_info["response"]["bodyRaw"])
         text = body.get("disclaimer")

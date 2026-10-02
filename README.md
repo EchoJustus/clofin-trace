@@ -24,7 +24,7 @@ Four scenarios, captured by `make capture-trace` in `clofin-core`:
 | **Segregation of duties, attempted and refused** | An operator tries to open a ledger account, a second operator tries to submit somebody else's draft, and the maker tries to approve her own payment |
 | **A settlement batch, and the four ways a scheme misbehaves** | Partial failure, a duplicate answer, a contradiction and a silence — with the ledger sand table following the money through `1100-CLIENT-FUNDS` → `1300-IN-TRANSIT` → `2100-CLIENT-PAYABLE` |
 | **The evidence pack an auditor extracts** | One payment from capture to settlement, then its complete trail |
-| **Reconciliation: a statement, its breaks, and the corrections that close them** | A simulated scheme statement ingested, delivered again, contradicted and perturbed; the breaks it opens assigned, corrected and refused — with a sand table over the settlement accounts and `2200-UNAPPLIED` |
+| **Reconciliation: a statement, its breaks, and the corrections that close them** | A simulated scheme statement ingested, delivered again and contradicted; the breaks three perturbed statements open, queued, assigned and corrected — one correction refused — and a returned payment retried, with a sand table over the settlement accounts and `2200-UNAPPLIED` |
 
 `ref-2`'s release-audit coverage, as its annotated tag records it and as the
 capture harness stamps it into every fixture, is labelled **`COMPLETE`**. The
@@ -38,7 +38,7 @@ Every fixture also records **how the capture bound to the process it read**,
 as `identityBinding`. Each page shows the captured value next to the tag, the
 commit and the coverage, linked to
 [ADR-0027 §3a](https://github.com/EchoJustus/clofin-core/blob/32dfcc99025fa339478f7ecf91b42ded71d725c2/docs/ADR/0027-browser-clients-cors-allowlist-and-instance-self-identification.md)
-at the captured commit, which is where what each value establishes is stated.
+at the captured commit, which describes the two modes.
 
 ## Scope
 

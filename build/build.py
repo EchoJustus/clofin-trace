@@ -173,8 +173,8 @@ def scope_banner(r: Renderer) -> str:
     because a SHA shown without its coverage invites the reader to supply the
     missing word, and the word they supply is "audited".
 
-    `identityBinding` is labelled by its field name and linked to the ADR that
-    defines what each of its values establishes, at the captured commit. This
+    `identityBinding` is labelled by its field name and linked to the ADR
+    section that describes the two modes it names, at the captured commit. This
     site does not say what it proves: a sentence of its own would be a
     paraphrase of a control, which RULE 3 does not allow.
     """
@@ -237,10 +237,10 @@ ADR_0027_SECTION = "#3a-amendment-2026-09-06--instanceid-and-what-an-echoed-valu
 
 
 def adr_0027_url(r: Renderer) -> str:
-    """ADR-0027 §3a at the captured commit — where `identityBinding`'s two
-    values are defined. A link built from the captured `sourceUrl`, so it
-    names the commit the fixtures came from rather than whatever `main` says
-    today."""
+    """ADR-0027 §3a at the captured commit — the section that describes the
+    two modes `identityBinding` names. A link built from the captured
+    `sourceUrl`, so it names the commit the fixtures came from rather than
+    whatever `main` says today."""
     return (r.f.provenance()["sourceUrl"].replace("/tree/", "/blob/")
             + "/" + ADR_0027 + ADR_0027_SECTION)
 
@@ -514,10 +514,10 @@ SCENARIO_QUOTES = {
     },
     "reconciliation-breaks": {
         "intro": (
-            "A statement is ingested, delivered again, contradicted and perturbed, and the "
-            "breaks it opens are worked through to corrections. What the controls the "
-            "acceptance script names guarantee is quoted from the documents the captured "
-            "commit carries:"),
+            "A statement is ingested, delivered again and contradicted, and the breaks that "
+            "three perturbed statements open are worked through to corrections. What the "
+            "controls the acceptance script names, and the invariants beside them, guarantee "
+            "is quoted from the documents the captured commit carries:"),
         "controls": ["C-13", "C-06", "C-01", "C-02", "C-03", "C-05", "C-08"],
         "invariants": ["I1", "I3", "I9"],
     },
@@ -603,7 +603,7 @@ def index_page(r: Renderer) -> tuple[str, str]:
     body = f"""<h1>A replay walkthrough of CloFin</h1>
 <p class="lead">CloFin is an open-source reference implementation of an enterprise payments
   and reconciliation core. Its controls are written down and tested, and until now they could
-  only be read about. This site shows them happening, in {scenario_count(r)} scenarios
+  only be read about. This site shows some of them happening, in {scenario_count(r)} scenarios
   replayed from the project's own acceptance-test scripts.</p>
 <p>Everything here is <strong>replayed captured output</strong>. A harness in
   <code>clofin-core</code> started the system at the tagged commit named above, ran the
@@ -692,7 +692,7 @@ def verify_page(r: Renderer) -> tuple[str, str]:
 </section>
 <section>
   <h2>4. What the service said it was</h2>
-  <p>The captured <code>GET /</code> response, as the service sent it to the capture run — the
+  <p>The captured <code>GET /</code> response body, as the capture fixture records it — the
      scope statement at the top of every page is read from this body.</p>
   {r.cap_json("service-info.json", "/response/bodyRaw", "Response body, GET /")}
 </section>
