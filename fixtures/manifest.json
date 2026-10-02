@@ -1,48 +1,55 @@
-{"schemaVersion":"clofin.capture/1",
+{"schemaVersion":"clofin.capture/2",
  "provenance":
- {"schemaVersion":"clofin.capture/1",
-  "sourceCommit":"5c7b4badced5e807e1022fce44cbcad38c6d2095",
-  "sourceCommitShort":"5c7b4ba",
-  "sourceRef":"ref-1",
+ {"schemaVersion":"clofin.capture/2",
+  "sourceCommit":"32dfcc99025fa339478f7ecf91b42ded71d725c2",
+  "sourceCommitShort":"32dfcc9",
+  "sourceRef":"ref-2",
   "sourceUrl":
-  "https://github.com/EchoJustus/clofin-core/tree/5c7b4badced5e807e1022fce44cbcad38c6d2095",
-  "tag":"ref-1",
-  "tagKind":"lightweight",
+  "https://github.com/EchoJustus/clofin-core/tree/32dfcc99025fa339478f7ecf91b42ded71d725c2",
+  "tag":"ref-2",
+  "tagKind":"annotated",
   "releaseAudit":
-  {"label":"PARTIAL",
+  {"label":"COMPLETE",
    "statement":
-   "RELEASE AUDIT: PARTIAL. Charter items 1-4 of 8 were performed (migrations replayed from empty; full suite; cross-document consistency; the partial-set sweep). Items 5-7 were NOT performed - standing-lessons compliance, known-debt reconciliation, and the synthetic-data/neutrality sweep - because the external auditor's compute quota was exhausted mid-audit. Closed under the recorded resource-interruption fallback; the uncovered items carry forward as mandatory-first scope for ref-2.",
-   "source":"release-annotation-file",
-   "sourceRef":"docs/releases/ref-1.annotation.txt",
+   "RELEASE AUDIT: COMPLETE. Charter items 1-8 of 8 were performed (migrations replayed from empty; the full suite; cross-document consistency; the partial-set sweep; standing-lessons compliance; known-debt reconciliation; the synthetic-data and neutrality sweep; citation discipline over 230 citations). Four sessions on the CodeSpace path: A-C on GPT-5.6 Sol, D - citation verification and the report - on a model the session could not name. Nothing was skipped and no fallback was needed. Deliverable: docs/audits/FEEDBACK-REL-ref-2.md.",
+   "source":"git-tag-annotation",
+   "sourceRef":"refs/tags/ref-2",
    "sourceSha256":
-   "cbdc34fd5c4ac5c41076d02020a20aac7377446b479bfb0b744ea8c780fdf8e9"},
-  "capturedAt":"2026-08-12T22:40:33.471124852Z",
-  "schemaVersionApplied":"0011",
+   "ae22baf699ed6bb17b0ed4f6e961b54c0942c1cfbabcb5661c05b4b1d2693d9c"},
+  "capturedAt":"2026-10-02T14:12:16.684881325Z",
+  "schemaVersionApplied":"0013",
+  "identityBinding":"instance-id",
   "harness":
-  {"commit":"00c148df1610a7c563ea27d0eae4e85155388f01", "dirty":
-                                                        true}},
+  {"commit":"65f0b32b418c1439c5d8ad93183f996bd5cdd3ce",
+   "dirty":false}},
  "fixture":
  {"path":"service-info.json",
   "sha256":
-  "3ff8be8767c74e45d3d0adc41c5fddcdc4a794d4617e554bdb01ee17375bdcab"},
+  "0fa57f3a94c79c5e26d832cac8e24c3ab2d221134083c3e2ac6664545e298922"},
  "quotations":
  {"path":"quotations.json",
   "sha256":
-  "a43a6013c82baf3f79ba58e8a75a0f67ea50d2845aa1b46700ec9c04e0e7b2f5"},
+  "24f9e6e6869a8f682ce1293325240550509717c374e4c6caffeb34639ebf928b"},
  "bundles":
  [{"id":"segregation-of-duties-refused",
    "title":"Segregation of duties, attempted and refused",
    "path":"bundles/segregation-of-duties-refused.json",
    "sha256":
-   "c661f5a2b5b2fca36f91ff2495164553b51c29761ece1757126d6b0e31324132"},
+   "15cf6b785dddce33efb84f9220865b11e7ce1e1c856c729e12facf6c2a356931"},
   {"id":"settlement-batch-misbehaves",
    "title":
    "A settlement batch, and the four ways a scheme misbehaves",
    "path":"bundles/settlement-batch-misbehaves.json",
    "sha256":
-   "a43df5d04000f911f453f143dbc273296b895184f475b7c4d11ca45de247117b"},
+   "3cae6d49faa49a91fc2900fb0fb813a0fa093c248d9f648613db1f18dd2026e4"},
   {"id":"evidence-pack-timeline",
    "title":"The evidence pack an auditor extracts",
    "path":"bundles/evidence-pack-timeline.json",
    "sha256":
-   "fc25a19e87d197a898cb7bc896b50ecc0a7af86a4b2cdf9d636252ce7c8d3abe"}]}
+   "bc7ae3d04a5615c3a4dcba3cf32360004b737eb1a99a2474b58f10bac949c050"},
+  {"id":"reconciliation-breaks",
+   "title":
+   "Reconciliation: a statement, its breaks, and the corrections that close them",
+   "path":"bundles/reconciliation-breaks.json",
+   "sha256":
+   "fd98aa70f058edfc5a7552846ee8c13144a14a7d1603240ca5f4bdbc0a5df151"}]}

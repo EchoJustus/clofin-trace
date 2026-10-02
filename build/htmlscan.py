@@ -54,6 +54,11 @@ class PageReader(HTMLParser):
         self.open_marked: list[tuple[Marked, int]] = []
         self.text_parts: list[str] = []
         self.exempt_text_parts: list[str] = []
+        # The same visible text as `text_parts`, chunk by chunk, each chunk with
+        # the `data-captured` references of the elements it sits inside. Kept
+        # so that a check can ask whether a *captured* value — not merely the
+        # same word typed — is in a given sentence.
+        self.segments: list[tuple[str, tuple[str, ...]]] = []
         self._exempt_depth = 0
 
     # -- ancestry ----------------------------------------------------------
@@ -101,6 +106,7 @@ class PageReader(HTMLParser):
             self.exempt_text_parts.append("\n")
         else:
             self.text_parts.append("\n")
+            self.segments.append(("\n", ()))
 
     def handle_data(self, data):
         for element, _ in self.open_marked:
@@ -111,6 +117,8 @@ class PageReader(HTMLParser):
             self.exempt_text_parts.append(data)
         else:
             self.text_parts.append(data)
+            self.segments.append((data, tuple(e.value for e, _ in self.open_marked
+                                              if e.marker == "data-captured")))
 
     # -- results -----------------------------------------------------------
 
@@ -150,3 +158,36 @@ def sentences(text: str) -> list[str]:
     """
     return [re.sub(r"\s+", " ", s).strip()
             for s in SENTENCE_END.split(text) if s.strip()]
+
+
+def sentences_with_captures(page: PageReader) -> list[tuple[str, set[str]]]:
+    """Visible text outside exempt regions as sentences, each with the
+    `data-captured` references whose rendered text falls inside it.
+
+    Split exactly as `sentences` splits — at sentence-ending punctuation and at
+    the block boundaries `PageReader` recorded — but over the chunks the text
+    was built from, so that a sentence knows which captured values it carries.
+    This is what lets a check tell a qualifier rendered from a fixture from the
+    same word typed by whoever wrote the page.
+    """
+    text = "".join(chunk for chunk, _ in page.segments)
+    spans, at = [], 0
+    for chunk, refs in page.segments:
+        spans.append((at, at + len(chunk), refs))
+        at += len(chunk)
+    bounds, start = [], 0
+    for match in SENTENCE_END.finditer(text):
+        bounds.append((start, match.start()))
+        start = match.end()
+    bounds.append((start, len(text)))
+    found = []
+    for begin, end in bounds:
+        sentence = re.sub(r"\s+", " ", text[begin:end]).strip()
+        if not sentence:
+            continue
+        refs = set()
+        for s0, s1, chunk_refs in spans:
+            if chunk_refs and s0 < end and s1 > begin:
+                refs.update(chunk_refs)
+        found.append((sentence, refs))
+    return found

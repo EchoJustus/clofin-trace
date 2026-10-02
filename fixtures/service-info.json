@@ -1,37 +1,38 @@
-{"schemaVersion":"clofin.capture/1",
+{"schemaVersion":"clofin.capture/2",
  "fixture":"GET /",
  "provenance":
- {"schemaVersion":"clofin.capture/1",
-  "sourceCommit":"5c7b4badced5e807e1022fce44cbcad38c6d2095",
-  "sourceCommitShort":"5c7b4ba",
-  "sourceRef":"ref-1",
+ {"schemaVersion":"clofin.capture/2",
+  "sourceCommit":"32dfcc99025fa339478f7ecf91b42ded71d725c2",
+  "sourceCommitShort":"32dfcc9",
+  "sourceRef":"ref-2",
   "sourceUrl":
-  "https://github.com/EchoJustus/clofin-core/tree/5c7b4badced5e807e1022fce44cbcad38c6d2095",
-  "tag":"ref-1",
-  "tagKind":"lightweight",
+  "https://github.com/EchoJustus/clofin-core/tree/32dfcc99025fa339478f7ecf91b42ded71d725c2",
+  "tag":"ref-2",
+  "tagKind":"annotated",
   "releaseAudit":
-  {"label":"PARTIAL",
+  {"label":"COMPLETE",
    "statement":
-   "RELEASE AUDIT: PARTIAL. Charter items 1-4 of 8 were performed (migrations replayed from empty; full suite; cross-document consistency; the partial-set sweep). Items 5-7 were NOT performed - standing-lessons compliance, known-debt reconciliation, and the synthetic-data/neutrality sweep - because the external auditor's compute quota was exhausted mid-audit. Closed under the recorded resource-interruption fallback; the uncovered items carry forward as mandatory-first scope for ref-2.",
-   "source":"release-annotation-file",
-   "sourceRef":"docs/releases/ref-1.annotation.txt",
+   "RELEASE AUDIT: COMPLETE. Charter items 1-8 of 8 were performed (migrations replayed from empty; the full suite; cross-document consistency; the partial-set sweep; standing-lessons compliance; known-debt reconciliation; the synthetic-data and neutrality sweep; citation discipline over 230 citations). Four sessions on the CodeSpace path: A-C on GPT-5.6 Sol, D - citation verification and the report - on a model the session could not name. Nothing was skipped and no fallback was needed. Deliverable: docs/audits/FEEDBACK-REL-ref-2.md.",
+   "source":"git-tag-annotation",
+   "sourceRef":"refs/tags/ref-2",
    "sourceSha256":
-   "cbdc34fd5c4ac5c41076d02020a20aac7377446b479bfb0b744ea8c780fdf8e9"},
-  "capturedAt":"2026-08-12T22:40:33.471124852Z",
-  "schemaVersionApplied":"0011",
+   "ae22baf699ed6bb17b0ed4f6e961b54c0942c1cfbabcb5661c05b4b1d2693d9c"},
+  "capturedAt":"2026-10-02T14:12:16.684881325Z",
+  "schemaVersionApplied":"0013",
+  "identityBinding":"instance-id",
   "harness":
-  {"commit":"00c148df1610a7c563ea27d0eae4e85155388f01", "dirty":
-                                                        true}},
+  {"commit":"65f0b32b418c1439c5d8ad93183f996bd5cdd3ce",
+   "dirty":false}},
  "request":{"method":"GET", "path":"/"},
  "response":
  {"status":200,
   "headers":
-  {"content-length":"368",
+  {"content-length":"478",
    "content-type":"application/json",
-   "date":"Wed, 12 Aug 2026 22:40:41 GMT",
-   "x-correlation-id":"e64f8623-538b-465d-a6aa-47be56d9cbb4"},
+   "date":"Fri, 02 Oct 2026 14:12:29 GMT",
+   "x-correlation-id":"d03d2b5e-f2b2-4281-90d2-65c2f65be59a"},
   "bodyRaw":
-  "{\"service\":\"clofin-core\",\"description\":\"Open-source enterprise payments and reconciliation core\",\"environment\":\"dev\",\"disclaimer\":\"CloFin operates on synthetic data only. It is not connected to any bank, payment scheme or central bank, holds no regulatory authorisation, and never processes real funds.\",\"documentation\":\"https:\\/\\/github.com\\/EchoJustus\\/clofin-core\"}",
+  "{\"service\":\"clofin-core\",\"description\":\"Open-source enterprise payments and reconciliation core\",\"environment\":\"dev\",\"disclaimer\":\"CloFin operates on synthetic data only. It is not connected to any bank, payment scheme or central bank, holds no regulatory authorisation, and never processes real funds.\",\"sourceCommit\":\"32dfcc99025fa339478f7ecf91b42ded71d725c2\",\"documentation\":\"https:\\/\\/github.com\\/EchoJustus\\/clofin-core\",\"instanceId\":\"<redacted: per-capture-run value>\"}",
   "body":
   {"service":"clofin-core",
    "description":
@@ -39,8 +40,11 @@
    "environment":"dev",
    "disclaimer":
    "CloFin operates on synthetic data only. It is not connected to any bank, payment scheme or central bank, holds no regulatory authorisation, and never processes real funds.",
-   "documentation":"https://github.com/EchoJustus/clofin-core"},
+   "sourceCommit":"32dfcc99025fa339478f7ecf91b42ded71d725c2",
+   "documentation":"https://github.com/EchoJustus/clofin-core",
+   "instanceId":"<redacted: per-capture-run value>"},
   "bodySha256":
-  "173858acdf40c65f5ba58689ec86cf088138a812cb7a87a7d20a00c2d84c2bf7"},
+  "f340306e0a38c2ae121b95e5881d29883ef5e4247abd911d7dffe0db4d7680ba"},
+ "instanceIdRedacted":true,
  "disclaimer":
  "CloFin operates on synthetic data only. It is not connected to any bank, payment scheme or central bank, holds no regulatory authorisation, and never processes real funds."}

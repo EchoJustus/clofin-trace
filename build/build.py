@@ -168,10 +168,15 @@ def scope_banner(r: Renderer) -> str:
     moving money. The banner is `position: sticky`, so it is in any screenshot
     of any part of any page.
 
-    The three provenance values sit together — tag, commit, and the tag's
-    recorded release-audit coverage — because a SHA shown without its
-    coverage invites the reader to supply the missing word, and the word they
-    supply is "audited".
+    The provenance values sit together — tag, commit, the tag's recorded
+    release-audit coverage, and how the capture bound to the process it read —
+    because a SHA shown without its coverage invites the reader to supply the
+    missing word, and the word they supply is "audited".
+
+    `identityBinding` is labelled by its field name and linked to the ADR that
+    defines what each of its values establishes, at the captured commit. This
+    site does not say what it proves: a sentence of its own would be a
+    paraphrase of a control, which RULE 3 does not allow.
     """
     m = "manifest.json"
     return f"""<header class="scope" role="banner">
@@ -184,6 +189,8 @@ def scope_banner(r: Renderer) -> str:
     <span class="chip">{r.cap(m, '/provenance/sourceCommitShort', tag='code')}</span>
     <span class="chip audit">release audit:
       {r.cap(m, '/provenance/releaseAudit/label', cls='mono')}</span>
+    <span class="chip"><a href="{html.escape(adr_0027_url(r))}">identityBinding</a>
+      {r.cap(m, '/provenance/identityBinding', tag='code')}</span>
   </p>
 </header>"""
 
@@ -208,6 +215,9 @@ def provenance_block(r: Renderer) -> str:
         <p class="muted">Read from {r.cap(m, '/provenance/releaseAudit/sourceRef', tag='code')}
           ({r.cap(m, '/provenance/releaseAudit/source')}), digest
           {r.cap(m, '/provenance/releaseAudit/sourceSha256', tag='code')}.</p></dd>
+    <dt><code>identityBinding</code></dt>
+      <dd>{r.cap(m, '/provenance/identityBinding', tag='code')} —
+        <a href="{html.escape(adr_0027_url(r))}">ADR-0027 §3a</a>, at the captured commit</dd>
     <dt>Captured</dt><dd>{r.cap(m, '/provenance/capturedAt', tag='time')}</dd>
     <dt>Schema version of the captured stack</dt>
       <dd>{r.cap(m, '/provenance/schemaVersionApplied', tag='code')}</dd>
@@ -222,13 +232,35 @@ def provenance_block(r: Renderer) -> str:
 </section>"""
 
 
-NAV = [
-    ("index.html", "Overview"),
-    ("segregation-of-duties-refused.html", "Segregation of duties"),
-    ("settlement-batch-misbehaves.html", "The settlement batch"),
-    ("evidence-pack-timeline.html", "The evidence pack"),
-    ("verify.html", "How to check this"),
-]
+ADR_0027 = "docs/ADR/0027-browser-clients-cors-allowlist-and-instance-self-identification.md"
+ADR_0027_SECTION = "#3a-amendment-2026-09-06--instanceid-and-what-an-echoed-value-establishes"
+
+
+def adr_0027_url(r: Renderer) -> str:
+    """ADR-0027 §3a at the captured commit — where `identityBinding`'s two
+    values are defined. A link built from the captured `sourceUrl`, so it
+    names the commit the fixtures came from rather than whatever `main` says
+    today."""
+    return (r.f.provenance()["sourceUrl"].replace("/tree/", "/blob/")
+            + "/" + ADR_0027 + ADR_0027_SECTION)
+
+
+# Short navigation labels for the scenarios this build has been taught to
+# present. The set of pages is the manifest's, not this table's: a scenario
+# the table does not name is still linked, under its captured title.
+NAV_LABELS = {
+    "segregation-of-duties-refused": "Segregation of duties",
+    "settlement-batch-misbehaves": "The settlement batch",
+    "evidence-pack-timeline": "The evidence pack",
+    "reconciliation-breaks": "Reconciliation",
+}
+
+
+def nav_entries(r: Renderer) -> list[tuple[str, str]]:
+    scenarios = [(f"{entry['id']}.html", NAV_LABELS.get(entry["id"], entry["title"]))
+                 for entry in r.f.manifest["bundles"]]
+    return ([("index.html", "Overview")] + scenarios
+            + [("verify.html", "How to check this")])
 
 
 def shell(r: Renderer, *, page: str, title: str, body: str) -> str:
@@ -236,7 +268,7 @@ def shell(r: Renderer, *, page: str, title: str, body: str) -> str:
     nav = "\n".join(
         '      <a href="{}"{}>{}</a>'.format(href, here if href == page else "",
                                              html.escape(label))
-        for href, label in NAV)
+        for href, label in nav_entries(r))
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -353,8 +385,9 @@ def sand_table(r: Renderer, source: str, bundle: dict) -> str:
                 "answered for. It drains in the row below, when the scheme finally answers.</p>")
     return f"""<section class="sand-table">
   <h2>The ledger sand table</h2>
-  <p>Each row is the three accounts' closing balances at one moment, and each cell is the
-     <code>closingBalance</code> of a captured <code>GET /accounts/&#123;id&#125;/statement</code>
+  <p>Each row is the closing balances of the accounts across the top at one moment, and each
+     cell is the <code>closingBalance</code> of a captured
+     <code>GET /accounts/&#123;id&#125;/statement</code>
      response — the step it came from is linked inside the cell. Nothing here is added up:
      the balances are the ledger's answers, not this page's.</p>
   <table>
@@ -479,6 +512,15 @@ SCENARIO_QUOTES = {
         "controls": ["C-05", "C-09"],
         "invariants": ["I9"],
     },
+    "reconciliation-breaks": {
+        "intro": (
+            "A statement is ingested, delivered again, contradicted and perturbed, and the "
+            "breaks it opens are worked through to corrections. What the controls the "
+            "acceptance script names guarantee is quoted from the documents the captured "
+            "commit carries:"),
+        "controls": ["C-13", "C-06", "C-01", "C-02", "C-03", "C-05", "C-08"],
+        "invariants": ["I1", "I3", "I9"],
+    },
 }
 
 
@@ -488,7 +530,11 @@ def scenario_page(r: Renderer, bundle_id: str) -> tuple[str, str]:
     snapshot_indices = [i for i, s in enumerate(steps) if s.get("kind") == "balance-snapshot"]
     narrative_indices = [i for i, s in enumerate(steps) if s.get("kind") != "balance-snapshot"]
 
-    quotes = SCENARIO_QUOTES[bundle_id]
+    quotes = SCENARIO_QUOTES.get(bundle_id)
+    if quotes is None:
+        raise BuildRefusal(
+            f"no quotation selection for scenario {bundle_id!r}: its page would show "
+            f"refusals and corrections without the controls' own words beside them")
     quoted = "\n".join([r.quote_control(c) for c in quotes["controls"]]
                        + [r.quote_invariant(i) for i in quotes["invariants"]])
 
@@ -530,6 +576,19 @@ def scenario_page(r: Renderer, bundle_id: str) -> tuple[str, str]:
 # Index and verification pages
 # ---------------------------------------------------------------------------
 
+NUMBER_WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"]
+
+
+def scenario_count(r: Renderer) -> str:
+    """How many scenarios this capture holds, from the manifest's own list.
+
+    Not typed: "the three scenarios" stayed on the page for a capture that
+    holds four, which is the class of figure this site exists to avoid.
+    """
+    n = len(r.f.manifest["bundles"])
+    return NUMBER_WORDS[n] if n < len(NUMBER_WORDS) else str(n)
+
+
 def index_page(r: Renderer) -> tuple[str, str]:
     cards = []
     for path, bundle in zip(r.f.bundle_paths, r.f.bundles):
@@ -544,18 +603,17 @@ def index_page(r: Renderer) -> tuple[str, str]:
     body = f"""<h1>A replay walkthrough of CloFin</h1>
 <p class="lead">CloFin is an open-source reference implementation of an enterprise payments
   and reconciliation core. Its controls are written down and tested, and until now they could
-  only be read about. This site shows three of them happening — a segregation-of-duties
-  violation being refused, a settlement batch surviving four kinds of scheme misbehaviour, and
-  the evidence pack an auditor extracts afterwards.</p>
+  only be read about. This site shows them happening, in {scenario_count(r)} scenarios
+  replayed from the project's own acceptance-test scripts.</p>
 <p>Everything here is <strong>replayed captured output</strong>. A harness in
-  <code>clofin-core</code> started the system at the tagged commit named above, ran the three
-  scenarios against it, and wrote down every request, every response, every journal entry and
-  every audit event. This site renders those recordings. It has no input, no form, no button
+  <code>clofin-core</code> started the system at the tagged commit named above, ran the
+  {scenario_count(r)} scenarios against it, and wrote down every request, every response,
+  every journal entry and every audit event. This site renders those recordings. It has no input, no form, no button
   that submits, and no JavaScript at all: there is nothing here to interact with, because
   everything here already happened.</p>
 {provenance_block(r)}
 <section class="cards">
-  <h2>The three scenarios</h2>
+  <h2>The {scenario_count(r)} scenarios</h2>
   {''.join(cards)}
 </section>
 <section>
@@ -600,11 +658,13 @@ def verify_page(r: Renderer) -> tuple[str, str]:
   <h2>2. Two checks run in this repository's CI, and only two</h2>
   <dl>
     <dt><code>provenance-present</code></dt>
-    <dd>Every fixture carries a complete stamp; the manifest's digests match the files; every
-      page displays the tag, the commit and the tag's release-audit coverage together; every
-      <code>data-captured</code> figure in the built output resolves to the value it names; and
-      no page attaches a word of assurance to the source state without the captured coverage
-      qualifier in the same sentence.</dd>
+    <dd>Every fixture carries a complete stamp, including <code>identityBinding</code>; the
+      manifest's digests match the files; a <code>sourceCommit</code> the service reported at
+      <code>GET /</code> is the commit the fixtures are stamped with; every page displays the
+      tag, the commit, the tag's release-audit coverage and the identity binding together;
+      every <code>data-captured</code> figure in the built output resolves to the value it names;
+      and no page attaches a word of assurance to the source state without the captured
+      coverage label in the same sentence.</dd>
     <dt><code>disclaimer-verbatim</code></dt>
     <dd>The scope statement in the built output — everywhere it appears, and in this
       repository's README — matches the captured <code>GET /</code> response byte for byte.
@@ -631,7 +691,13 @@ def verify_page(r: Renderer) -> tuple[str, str]:
   </table>
 </section>
 <section>
-  <h2>4. The source state, and what its audit did and did not cover</h2>
+  <h2>4. What the service said it was</h2>
+  <p>The captured <code>GET /</code> response, as the service sent it to the capture run — the
+     scope statement at the top of every page is read from this body.</p>
+  {r.cap_json("service-info.json", "/response/bodyRaw", "Response body, GET /")}
+</section>
+<section>
+  <h2>5. The source state, and what its audit did and did not cover</h2>
   <p>The commit these fixtures were captured from is
      <a href="{html.escape(r.f.provenance()['sourceUrl'])}">
      {r.cap(m, '/provenance/sourceCommit', tag='code')}</a>, tagged
