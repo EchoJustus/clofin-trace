@@ -16,40 +16,40 @@
    "sourceRef":"refs/tags/ref-2",
    "sourceSha256":
    "ae22baf699ed6bb17b0ed4f6e961b54c0942c1cfbabcb5661c05b4b1d2693d9c"},
-  "capturedAt":"2026-10-02T14:12:16.684881325Z",
+  "capturedAt":"2026-10-02T14:36:51.869252622Z",
   "schemaVersionApplied":"0013",
   "identityBinding":"instance-id",
   "harness":
-  {"commit":"65f0b32b418c1439c5d8ad93183f996bd5cdd3ce",
+  {"commit":"1ee83463e7ec0bcd13f53b31f59068b0d181ca55",
    "dirty":false}},
  "fixture":
  {"path":"service-info.json",
   "sha256":
-  "0fa57f3a94c79c5e26d832cac8e24c3ab2d221134083c3e2ac6664545e298922"},
+  "429bd8c2135ca5f968f342713ec8472489a9296f2b5d539452fcdb1de886145d"},
  "quotations":
  {"path":"quotations.json",
   "sha256":
-  "24f9e6e6869a8f682ce1293325240550509717c374e4c6caffeb34639ebf928b"},
+  "82d3583ce609d67e34f0b44cb42f949088eb04aefb87751985c110120b44e122"},
  "bundles":
  [{"id":"segregation-of-duties-refused",
    "title":"Segregation of duties, attempted and refused",
    "path":"bundles/segregation-of-duties-refused.json",
    "sha256":
-   "15cf6b785dddce33efb84f9220865b11e7ce1e1c856c729e12facf6c2a356931"},
+   "5f2f24ad0d6a6f45b7c39501b90c11cecbc8461f6587651dcdb968782dc4bf91"},
   {"id":"settlement-batch-misbehaves",
    "title":
    "A settlement batch, and the four ways a scheme misbehaves",
    "path":"bundles/settlement-batch-misbehaves.json",
    "sha256":
-   "3cae6d49faa49a91fc2900fb0fb813a0fa093c248d9f648613db1f18dd2026e4"},
+   "3754a0760b74f0a3ae60d27ea1eaed6e6c7ac421dcb25325fbb37fc550027b02"},
   {"id":"evidence-pack-timeline",
    "title":"The evidence pack an auditor extracts",
    "path":"bundles/evidence-pack-timeline.json",
    "sha256":
-   "bc7ae3d04a5615c3a4dcba3cf32360004b737eb1a99a2474b58f10bac949c050"},
+   "89d0f5995b902bb7ebd27c1eb8fdb67893ef118141152943945d7c4f2cb1d3f5"},
   {"id":"reconciliation-breaks",
    "title":
    "Reconciliation: a statement, its breaks, and the corrections that close them",
    "path":"bundles/reconciliation-breaks.json",
    "sha256":
-   "fd98aa70f058edfc5a7552846ee8c13144a14a7d1603240ca5f4bdbc0a5df151"}]}
+   "93e6d4367ad42aa5a86902002c3d117b61cb0f96478e79cbc8af37260bd4739b"}]}

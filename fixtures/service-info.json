@@ -17,11 +17,11 @@
    "sourceRef":"refs/tags/ref-2",
    "sourceSha256":
    "ae22baf699ed6bb17b0ed4f6e961b54c0942c1cfbabcb5661c05b4b1d2693d9c"},
-  "capturedAt":"2026-10-02T14:12:16.684881325Z",
+  "capturedAt":"2026-10-02T14:36:51.869252622Z",
   "schemaVersionApplied":"0013",
   "identityBinding":"instance-id",
   "harness":
-  {"commit":"65f0b32b418c1439c5d8ad93183f996bd5cdd3ce",
+  {"commit":"1ee83463e7ec0bcd13f53b31f59068b0d181ca55",
    "dirty":false}},
  "request":{"method":"GET", "path":"/"},
  "response":
@@ -29,8 +29,8 @@
   "headers":
   {"content-length":"478",
    "content-type":"application/json",
-   "date":"Fri, 02 Oct 2026 14:12:29 GMT",
-   "x-correlation-id":"d03d2b5e-f2b2-4281-90d2-65c2f65be59a"},
+   "date":"Fri, 02 Oct 2026 14:37:03 GMT",
+   "x-correlation-id":"919318bf-1e30-4ea2-9e35-7b74b71dc42e"},
   "bodyRaw":
   "{\"service\":\"clofin-core\",\"description\":\"Open-source enterprise payments and reconciliation core\",\"environment\":\"dev\",\"disclaimer\":\"CloFin operates on synthetic data only. It is not connected to any bank, payment scheme or central bank, holds no regulatory authorisation, and never processes real funds.\",\"sourceCommit\":\"32dfcc99025fa339478f7ecf91b42ded71d725c2\",\"documentation\":\"https:\\/\\/github.com\\/EchoJustus\\/clofin-core\",\"instanceId\":\"<redacted: per-capture-run value>\"}",
   "body":

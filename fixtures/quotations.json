@@ -17,11 +17,11 @@
    "sourceRef":"refs/tags/ref-2",
    "sourceSha256":
    "ae22baf699ed6bb17b0ed4f6e961b54c0942c1cfbabcb5661c05b4b1d2693d9c"},
-  "capturedAt":"2026-10-02T14:12:16.684881325Z",
+  "capturedAt":"2026-10-02T14:36:51.869252622Z",
   "schemaVersionApplied":"0013",
   "identityBinding":"instance-id",
   "harness":
-  {"commit":"65f0b32b418c1439c5d8ad93183f996bd5cdd3ce",
+  {"commit":"1ee83463e7ec0bcd13f53b31f59068b0d181ca55",
    "dirty":false}},
  "note":
  "Extracted verbatim from the captured commit's own docs/COMPLIANCE.md and docs/DOMAIN_MODEL.md. The only transformation is unwrapping hard-wrapped lines into the paragraph they are; paragraphs and list items within a statement are kept apart, one per line. ADR-0020 RULE 3.",
