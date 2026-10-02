@@ -26,8 +26,9 @@ come from*, and this check asks that question of four things:
    and the identity binding, together and in-frame.** Not in a footer: a
    screenshot crops a footer. Together: a SHA shown without its coverage
    invites the reader to supply the missing word, and the word they supply is
-   "audited"; a coverage shown without the binding leaves out how the capture
-   knew which process it was reading.
+   "audited"; the captured `identityBinding` sits with them. Nothing on a page
+   may be hidden from its reader — a hidden element, an inline style, a
+   template — since each would let a value be "shown" that nobody sees.
 
 3. **Every figure in the built output resolves.** Each captured value carries
    the fixture and JSON pointer it came from; this check walks the rendered
@@ -154,6 +155,15 @@ def published_copy_problems(fixture_root: Path, site_root: Path) -> list[str]:
 def check_page(fixtures: Fixtures, name: str, markup: str, coverage_label: str) -> list[str]:
     problems: list[str] = []
     page = htmlscan.read(markup, exempt_ancestors=EXEMPT)
+
+    # -- 0. nothing on the page is hidden from its reader ------------------
+    # Every rule below asks whether something is shown; text a reader cannot
+    # see would answer "yes" for them.
+    for pattern, what in htmlscan.HIDING:
+        hit = pattern.search(markup)
+        if hit:
+            problems.append(f"{name}: carries {what} ({hit.group(0)[:60]!r}); every figure, "
+                            f"qualifier and provenance value on a page must be visible")
 
     # -- 3. every figure resolves -----------------------------------------
     figures = 0

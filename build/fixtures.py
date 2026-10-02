@@ -17,6 +17,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from datetime import datetime
 from pathlib import Path
 
 SCHEMA_VERSION = "clofin.capture/2"
@@ -30,7 +31,23 @@ not rendered with a blank where the binding goes — it is not rendered at all.
 
 IDENTITY_BINDINGS = ("instance-id", "port-exclusion")
 
-INSTANT = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,9})?)?Z")
+INSTANT = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?Z")
+
+
+def is_instant(value) -> bool:
+    """The harness's `Instant` rendering: a real UTC date and time, seconds
+    present, up to nine fractional digits, `Z`.
+
+    It accepts nothing `java.time.Instant/parse` rejects, and is stricter in
+    one direction only — it refuses an offset or lower-case letters, which
+    `Instant/parse` reads and the harness never writes."""
+    if not isinstance(value, str) or INSTANT.fullmatch(value) is None:
+        return False
+    try:
+        datetime.fromisoformat(value[:19])
+    except ValueError:
+        return False
+    return True
 
 
 class FixtureError(Exception):
@@ -86,10 +103,10 @@ REQUIRED_PROVENANCE = [
     (["releaseAudit", "sourceRef"], lambda v: isinstance(v, str) and v.strip() != ""),
     (["releaseAudit", "sourceSha256"], lambda v: isinstance(v, str)
      and re.fullmatch(r"[0-9a-f]{64}", v) is not None),
-    # The harness's own instant format (`java.time.Instant`'s rendering), and
-    # its own four-digit migration id — the predicates mirror the harness's
-    # `required`, not only its field names.
-    (["capturedAt"], lambda v: isinstance(v, str) and INSTANT.fullmatch(v) is not None),
+    # The harness's own instant rendering and its own four-digit migration id:
+    # each predicate accepts nothing the harness's `required` rejects, not
+    # only the same field names.
+    (["capturedAt"], is_instant),
     (["schemaVersionApplied"], lambda v: isinstance(v, str)
      and re.fullmatch(r"\d{4}", v) is not None),
     # How the capture established that the process it interrogated was the one
@@ -104,8 +121,8 @@ def provenance_problems(document, name: str) -> list[str]:
     """Every reason `document` is not fully stamped, as sentences.
 
     The same field list the harness enforces before it writes — the same
-    fields and, field by field, the same test of each — restated here rather
-    than trusted: this repository is the one outside audit scope, so it
+    fields, each tested so that nothing the harness's test rejects is accepted
+    here — restated rather than trusted: this repository is the one outside audit scope, so it
     checks the artifact in front of it instead of assuming the thing that
     produced it behaved.
     """
@@ -126,6 +143,15 @@ def provenance_problems(document, name: str) -> list[str]:
             problems.append(f"{name}: provenance.{'.'.join(path)} is missing or invalid "
                             f"({value!r})")
     return problems
+
+
+def first_difference(a, b, path: str = "") -> str:
+    """The first path at which two stamps differ, for a report a reader can act on."""
+    if isinstance(a, dict) and isinstance(b, dict):
+        for key in list(a) + [k for k in b if k not in a]:
+            if a.get(key) != b.get(key):
+                return first_difference(a.get(key), b.get(key), f"{path}.{key}" if path else key)
+    return f"{path} ({a!r}, manifest {b!r})"
 
 
 # --------------------------------------------------------------------------
@@ -205,11 +231,26 @@ class Fixtures:
         # `.get` all the way down: this runs *after* the stamp check above, so
         # a fixture with no provenance at all has already been reported and
         # must not turn a report into a traceback.
-        commits = {(d.get("provenance") or {}).get("sourceCommit")
-                   for d in [self.manifest, self.service_info, self.quotations] + self.bundles}
-        commits.discard(None)
-        if len(commits) > 1:
-            found.append(f"the fixture set spans more than one source commit: {sorted(commits)}")
+        # Not only the commit: every page renders the manifest's stamp, so a
+        # bundle stamped otherwise — another binding, another label — would be
+        # shown under a provenance block that is not its own. One capture run
+        # stamps every artifact identically; anything else is a mixed set.
+        reference = self.manifest.get("provenance")
+        for path, document in ([(self.manifest["fixture"]["path"], self.service_info),
+                                (self.manifest["quotations"]["path"], self.quotations)]
+                               + list(zip(self.bundle_paths, self.bundles))):
+            stamp = document.get("provenance")
+            if isinstance(stamp, dict) and isinstance(reference, dict) and stamp != reference:
+                where = first_difference(stamp, reference)
+                found.append(f"{path}: its stamp differs from manifest.json's at provenance.{where} "
+                             f"— the fixture set is not one capture run")
+        # The manifest is an index of the bundles; its entries name them.
+        for entry, bundle in zip(self.manifest["bundles"], self.bundles):
+            scenario = bundle.get("scenario") or {}
+            for key in ("id", "title"):
+                if entry.get(key) != scenario.get(key):
+                    found.append(f"{entry['path']}: the manifest's {key} {entry.get(key)!r} is not "
+                                 f"the bundle's scenario.{key} {scenario.get(key)!r}")
 
         # Every sand-table cell must still equal the step it names.
         for path, bundle in zip(self.bundle_paths, self.bundles):
@@ -235,10 +276,35 @@ class Fixtures:
             body = json.loads(self.service_info["response"]["bodyRaw"])
         except (KeyError, TypeError, ValueError):
             return [f"{name}: the captured GET / body is not a JSON document"]
-        if not isinstance(body, dict) or "sourceCommit" not in body:
-            return []
-        reported = body["sourceCommit"]
+        if not isinstance(body, dict):
+            return [f"{name}: the captured GET / body is not a JSON object"]
         found = []
+        # The fixture carries the response twice — the raw bytes and their
+        # parse. A reader of the published file reads the parse; it must say
+        # what the bytes say, or a check over one is no check over the other.
+        if self.service_info["response"].get("body") != body:
+            found.append(f"{name}: response.body is not the parse of response.bodyRaw")
+        # What the GET / must carry follows from how the capture says it bound:
+        # an `instance-id` capture is one whose service echoed both fields (the
+        # run's id redacted in the fixture, and said so); a `port-exclusion`
+        # capture is one whose service renders neither.
+        binding = (self.manifest.get("provenance") or {}).get("identityBinding")
+        if binding == "instance-id":
+            if "sourceCommit" not in body:
+                found.append(f"{name}: the stamp says the capture bound by instance id, and the "
+                             f"captured GET / carries no sourceCommit")
+            if "instanceId" not in body:
+                found.append(f"{name}: the stamp says the capture bound by instance id, and the "
+                             f"captured GET / carries no instanceId")
+            if self.service_info.get("instanceIdRedacted") is not True:
+                found.append(f"{name}: the stamp says the capture bound by instance id, and the "
+                             f"fixture does not say the run's instance id was redacted")
+        elif binding == "port-exclusion" and "instanceId" in body:
+            found.append(f"{name}: the stamp says the capture bound by port exclusion, and the "
+                         f"captured GET / carries an instanceId")
+        if "sourceCommit" not in body:
+            return found
+        reported = body["sourceCommit"]
         for where, document in [(name, self.service_info), ("manifest.json", self.manifest)]:
             stamped = (document.get("provenance") or {}).get("sourceCommit")
             if reported != stamped:

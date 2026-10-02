@@ -46,6 +46,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import htmlscan  # noqa: E402
 from fixtures import Fixtures, FixtureError, resolve_pointer  # noqa: E402
 
 
@@ -169,7 +170,7 @@ def scope_banner(r: Renderer) -> str:
     of any part of any page.
 
     The provenance values sit together — tag, commit, the tag's recorded
-    release-audit coverage, and how the capture bound to the process it read —
+    release-audit coverage, and the captured `identityBinding` —
     because a SHA shown without its coverage invites the reader to supply the
     missing word, and the word they supply is "audited".
 
@@ -257,8 +258,11 @@ NAV_LABELS = {
 
 
 def nav_entries(r: Renderer) -> list[tuple[str, str]]:
-    scenarios = [(f"{entry['id']}.html", NAV_LABELS.get(entry["id"], entry["title"]))
-                 for entry in r.f.manifest["bundles"]]
+    # From the bundles themselves — the same id each page is written under —
+    # so a link cannot name a page the build did not write.
+    scenarios = [(f"{b['scenario']['id']}.html",
+                  NAV_LABELS.get(b["scenario"]["id"], b["scenario"]["title"]))
+                 for b in r.f.bundles]
     return ([("index.html", "Overview")] + scenarios
             + [("verify.html", "How to check this")])
 
@@ -378,8 +382,8 @@ def sand_table(r: Renderer, source: str, bundle: dict) -> str:
         if row.get("afterStep") == "swept" and "1300-IN-TRANSIT" in accounts:
             j = accounts.index("1300-IN-TRANSIT")
             note = (
-                '<p class="table-note">The highlighted row is the sweep. Its three balances are '
-                "the same three the row above shows, and "
+                '<p class="table-note">The highlighted row is the sweep. Its balances are the '
+                "same ones the row above shows, and "
                 + r.cap(source, f"/sandTable/rows/{i}/cells/{j}/display", cls="amount")
                 + " is still sitting in <code>1300-IN-TRANSIT</code> — the payment nobody "
                 "answered for. It drains in the row below, when the scheme finally answers.</p>")
@@ -494,7 +498,7 @@ def snapshots_appendix(r: Renderer, source: str, bundle: dict, indices: list[int
 SCENARIO_QUOTES = {
     "segregation-of-duties-refused": {
         "intro": (
-            "Three attempts, three refusals. What the refusals mean is not this page's to "
+            "Each attempt is refused. What the refusals mean is not this page's to "
             "say, so the controls say it themselves:"),
         "controls": ["C-01", "C-08", "C-05"],
         "invariants": ["I8", "I9"],
@@ -514,8 +518,8 @@ SCENARIO_QUOTES = {
     },
     "reconciliation-breaks": {
         "intro": (
-            "A statement is ingested, delivered again and contradicted, and the breaks that "
-            "three perturbed statements open are worked through to corrections. What the "
+            "A statement is ingested, delivered again and contradicted, and the breaks the "
+            "perturbed statements open are worked through to corrections. What the "
             "controls the acceptance script names, and the invariants beside them, guarantee "
             "is quoted from the documents the captured commit carries:"),
         "controls": ["C-13", "C-06", "C-01", "C-02", "C-03", "C-05", "C-08"],
@@ -652,7 +656,7 @@ def verify_page(r: Renderer) -> tuple[str, str]:
      literal.</p>
   <p>Values shown as pretty-printed documents carry <code>data-captured-json</code> instead,
      and are compared with the captured body parsed rather than as text, because the fixture
-     holds the bytes the service actually sent and this page rewraps them to be readable.</p>
+     holds the raw body the capture recorded and this page rewraps it to be readable.</p>
 </section>
 <section>
   <h2>2. Two checks run in this repository's CI, and only two</h2>
@@ -691,7 +695,7 @@ def verify_page(r: Renderer) -> tuple[str, str]:
   </table>
 </section>
 <section>
-  <h2>4. What the service said it was</h2>
+  <h2>4. The captured GET / response body</h2>
   <p>The captured <code>GET /</code> response body, as the capture fixture records it — the
      scope statement at the top of every page is read from this body.</p>
   {r.cap_json("service-info.json", "/response/bodyRaw", "Response body, GET /")}
@@ -832,7 +836,7 @@ FORBIDDEN = [
      "an external stylesheet: static assets only"),
     (re.compile(r"<form", re.I), "a form: there is nothing here to submit"),
     (re.compile(r"<input", re.I), "an input: there is nothing here to type into"),
-]
+] + [(pattern, f"{why}: every value on a page must be visible") for pattern, why in htmlscan.HIDING]
 
 
 def refuse_if_forbidden(page: str, markup: str) -> None:

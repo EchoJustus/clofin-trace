@@ -29,6 +29,18 @@ BLOCK = {"p", "div", "li", "ul", "ol", "h1", "h2", "h3", "h4", "h5", "h6",
 MARKERS = ("data-captured", "data-captured-json", "data-captured-markdown",
            "data-scope-statement")
 
+# Ways a page can carry text a reader does not see. The site's only styling is
+# its stylesheet, so none of these has a use here — and each would let a check
+# that asks "is the qualifier beside the claim?" or "is the binding in frame?"
+# be answered by something nobody can read. Refused by the build and failed by
+# `provenance-present`, over the built output.
+HIDING = [
+    (re.compile(r"<[a-z][^>]*\shidden(?=[\s=>/])", re.I), "a hidden element"),
+    (re.compile(r"<[a-z][^>]*\saria-hidden\s*=", re.I), "an aria-hidden element"),
+    (re.compile(r"<[a-z][^>]*\sstyle\s*=", re.I), "an inline style"),
+    (re.compile(r"<template[\s>]", re.I), "a template element"),
+]
+
 
 class Marked:
     """One marked element: its attribute, its value, its text and its ancestry."""
