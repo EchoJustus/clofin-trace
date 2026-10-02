@@ -12,33 +12,33 @@ The built walkthrough is served at <https://echojustus.github.io/clofin-trace/>.
 ## What this site shows
 
 Every figure on this site is **replayed captured output** of
-[`clofin-core` at tag `ref-1`, commit `5c7b4ba`](https://github.com/EchoJustus/clofin-core/tree/5c7b4badced5e807e1022fce44cbcad38c6d2095).
+[`clofin-core` at tag `ref-2`, commit `32dfcc9`](https://github.com/EchoJustus/clofin-core/tree/32dfcc99025fa339478f7ecf91b42ded71d725c2).
 If a value cannot be traced to captured output of that commit, it does not
 appear ([ADR-0020](https://github.com/EchoJustus/clofin-core/blob/main/docs/ADR/0020-two-repositories-and-the-generate-replay-rules.md),
 RULE 2 — replay, never fake).
 
-Three scenarios, captured by `make capture-trace` in `clofin-core`:
+Four scenarios, captured by `make capture-trace` in `clofin-core`:
 
 | | |
 |---|---|
 | **Segregation of duties, attempted and refused** | An operator tries to open a ledger account, a second operator tries to submit somebody else's draft, and the maker tries to approve her own payment |
 | **A settlement batch, and the four ways a scheme misbehaves** | Partial failure, a duplicate answer, a contradiction and a silence — with the ledger sand table following the money through `1100-CLIENT-FUNDS` → `1300-IN-TRANSIT` → `2100-CLIENT-PAYABLE` |
 | **The evidence pack an auditor extracts** | One payment from capture to settlement, then its complete trail |
+| **Reconciliation: a statement, its breaks, and the corrections that close them** | A simulated scheme statement ingested, delivered again, contradicted and perturbed; the breaks it opens assigned, corrected and refused — with a sand table over the settlement accounts and `2200-UNAPPLIED` |
 
-`ref-1`'s release audit was **partial — charter items 1–4 of 8**, with items
-5–7 carried forward to `ref-2`. This walkthrough states the coverage its source
-actually has, and never characterises that source without the qualifier. The
-coverage is not written down here: it is **read from the tag's release
-annotation** by the capture harness and stamped into every fixture, so the
-walkthrough renders whatever the tag actually records.
+`ref-2`'s release-audit coverage, as its annotated tag records it and as the
+capture harness stamps it into every fixture, is labelled **`COMPLETE`**. The
+coverage is not written down here beyond that label: the harness reads the
+whole `RELEASE AUDIT:` paragraph from the tag's own annotation and every page
+renders it, verbatim, beside the tag and the commit — so the walkthrough shows
+whatever the tag actually records, and never characterises its source without
+that captured qualifier.
 
-> **Where that annotation lives.** `refs/tags/ref-1` is a lightweight tag, and
-> the text CloFin's own protocol describes as its annotation is the body of the
-> GitHub release published on it. The harness reads an annotated tag's message
-> when there is one and a committed byte-for-byte mirror of the release body
-> when there is not, and stamps which of the two it used into every bundle.
-> Recorded as objection O-1 in
-> [`007-REQ`](https://github.com/EchoJustus/clofin-core/blob/main/docs/audits/007-REQ-clofin-trace.md).
+Every fixture also records **how the capture bound to the process it read**,
+as `identityBinding`. Each page shows the captured value next to the tag, the
+commit and the coverage, linked to
+[ADR-0027 §3a](https://github.com/EchoJustus/clofin-core/blob/32dfcc99025fa339478f7ecf91b42ded71d725c2/docs/ADR/0027-browser-clients-cors-allowlist-and-instance-self-identification.md)
+at the captured commit, which is where what each value establishes is stated.
 
 ## Scope
 
@@ -69,7 +69,7 @@ Then open `_site/index.html`. The published site is the same output, built by
 
 | Check | What it fails on |
 |---|---|
-| **`provenance-present`** | A fixture missing any part of its stamp; a manifest digest that no longer matches its file; a page that does not show the tag, the commit and the tag's release-audit coverage together and in-frame; a displayed figure that does not resolve to the captured value it names; a sand-table cell that no longer equals the step it was read from; a sentence that attaches a word of assurance to the source state without the captured coverage qualifier beside it |
+| **`provenance-present`** | A manifest of any bundle schema but `clofin.capture/2`, named; a fixture missing any part of its stamp, `identityBinding` included; a manifest digest that no longer matches its file; a captured `GET /` whose self-reported `sourceCommit` is not the commit the fixtures are stamped with; a page that does not show the tag, the commit, the tag's release-audit coverage and the identity binding together and in-frame; a displayed figure that does not resolve to the captured value it names; a sand-table cell that no longer equals the step it was read from; a sentence that attaches a word of assurance to the source state without the captured coverage label beside it |
 | **`disclaimer-verbatim`** | Any rendering of the scope statement — on any page, or in this README — that is not the captured `GET /` response byte for byte, including a softened or shortened one |
 
 A third check here would be a guarantee this repository is not entitled to
@@ -88,8 +88,12 @@ build refuses to emit a page containing any of them.
 
 ## Fixtures
 
-`fixtures/` holds the capture output, published with the site so that any
-figure can be checked:
+`fixtures/` holds the output of **one capture run — one capture per site**,
+published with the site so that any figure can be checked. The build reads one
+bundle schema and refuses a manifest of any other, naming its version. The
+previous capture, of `ref-1` (`5c7b4ba`, schema `clofin.capture/1`), is not
+rebuilt here; it lives in this repository's history at commit
+[`bc0017c`](https://github.com/EchoJustus/clofin-trace/tree/bc0017c/fixtures).
 
 | File | |
 |---|---|
