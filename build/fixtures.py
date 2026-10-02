@@ -31,16 +31,18 @@ not rendered with a blank where the binding goes — it is not rendered at all.
 
 IDENTITY_BINDINGS = ("instance-id", "port-exclusion")
 
-INSTANT = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?Z")
+# `[0-9]`, not `\d`: Python's `\d` matches any Unicode decimal digit, and the
+# harness's Java patterns and `Instant/parse` accept only ASCII ones.
+INSTANT = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]{1,9})?Z")
 
 
 def is_instant(value) -> bool:
     """The harness's `Instant` rendering: a real UTC date and time, seconds
     present, up to nine fractional digits, `Z`.
 
-    It accepts nothing `java.time.Instant/parse` rejects, and is stricter in
-    one direction only — it refuses an offset or lower-case letters, which
-    `Instant/parse` reads and the harness never writes."""
+    It accepts nothing `java.time.Instant/parse` rejects. Where the two differ
+    it is the stricter: it refuses, for example, an offset or lower-case
+    letters, which `Instant/parse` reads and the harness never writes."""
     if not isinstance(value, str) or INSTANT.fullmatch(value) is None:
         return False
     try:
@@ -92,7 +94,11 @@ def resolve_pointer(document, pointer: str):
 REQUIRED_PROVENANCE = [
     (["sourceCommit"], lambda v: isinstance(v, str) and len(v) == 40 and all(
         c in "0123456789abcdef" for c in v)),
-    (["sourceCommitShort"], lambda v: isinstance(v, str) and len(v) == 7),
+    # Seven hex digits. The harness asks for seven characters, counted in UTF-16
+    # units; `len` counts code points, so seven characters here could be eight
+    # there. Seven hex digits are seven either way, and are what it writes.
+    (["sourceCommitShort"], lambda v: isinstance(v, str)
+     and re.fullmatch(r"[0-9a-f]{7}", v) is not None),
     (["sourceRef"], lambda v: isinstance(v, str) and v.strip() != ""),
     (["sourceUrl"], lambda v: isinstance(v, str) and v.startswith("https://github.com/")),
     (["tag"], lambda v: isinstance(v, str) and v.strip() != ""),
@@ -108,7 +114,7 @@ REQUIRED_PROVENANCE = [
     # only the same field names.
     (["capturedAt"], is_instant),
     (["schemaVersionApplied"], lambda v: isinstance(v, str)
-     and re.fullmatch(r"\d{4}", v) is not None),
+     and re.fullmatch(r"[0-9]{4}", v) is not None),
     # How the capture established that the process it interrogated was the one
     # it started — exactly one of the two values the harness can stamp. The two
     # modes are described in clofin-core ADR-0027 §3a, not in this file.
