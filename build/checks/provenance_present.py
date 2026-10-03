@@ -10,16 +10,25 @@ come from*, and this check asks that question of four things:
    committed one.** The same field list the capture harness enforces before it
    writes — restated here rather than trusted, because this repository is the
    one outside release-audit scope and its job is to check the artifact in
-   front of it. The manifest's digests are compared with the files themselves,
-   and every fixture in the set must name one source commit. Those digests
-   bind `fixtures/`; what a reader downloads when they follow *check it
-   yourself* is the copy published beside the pages, so that copy is compared
-   with the committed one file for file, byte for byte.
+   front of it. That list includes `identityBinding` — how the capture
+   established that the process it interrogated was the one it started — with
+   exactly the two values the harness stamps. A manifest of any schema but the
+   one this build reads is refused, naming its version. The manifest's digests
+   are compared with the files themselves, and every fixture in the set must
+   name one source commit; when the captured `GET /` reports a `sourceCommit`
+   of its own, it must be that commit byte for byte (lesson L-19, on the
+   consumer's side). Those digests bind `fixtures/`; what a reader downloads
+   when they follow *check it yourself* is the copy published beside the
+   pages, so that copy is compared with the committed one file for file, byte
+   for byte.
 
-2. **Every page displays the tag, the commit and the tag's release-audit
-   coverage, together and in-frame.** Not in a footer: a screenshot crops a
-   footer. All three, together: a SHA shown without its coverage invites the
-   reader to supply the missing word, and the word they supply is "audited".
+2. **Every page displays the tag, the commit, the tag's release-audit coverage
+   and the identity binding, together and in-frame.** Not in a footer: a
+   screenshot crops a footer. Together: a SHA shown without its coverage
+   invites the reader to supply the missing word, and the word they supply is
+   "audited"; the captured `identityBinding` sits with them. Nothing on a page
+   may be hidden from its reader — a hidden element, an inline style, a
+   template — since each would let a value be "shown" that nobody sees.
 
 3. **Every figure in the built output resolves.** Each captured value carries
    the fixture and JSON pointer it came from; this check walks the rendered
@@ -33,8 +42,11 @@ come from*, and this check asks that question of four things:
    without the captured coverage qualifier in the same sentence.** `ref-1`'s
    release audit was partial — charter items 1–4 of 8 — and a walkthrough
    implying otherwise would be standing lesson L-14 in the project's most
-   public artifact. The provenance block itself is exempt: it is where the
-   qualifier lives.
+   public artifact. The qualifier is the **captured** label — an element
+   rendered from the fixture's `/provenance/releaseAudit/label` — never a word
+   of the page's own: with a label of `COMPLETE`, the ordinary English word
+   "complete" typed beside "audited" would otherwise pass for it. The
+   provenance block itself is exempt: it is where the qualifier lives.
 
 The fourth is here rather than in a third check because the qualifier *is*
 provenance. `clofin-trace` runs exactly two checks (ADR-0020), and a third one
@@ -61,6 +73,8 @@ CHARACTERISING = re.compile(
     r"\b(audited|verified|reviewed|attested|certified|assured|validated)\b", re.I)
 
 EXEMPT = ("header.scope", "#provenance", "section.provenance")
+
+LABEL_POINTER = "/provenance/releaseAudit/label"
 
 
 def resolve(fixtures: Fixtures, reference: str):
@@ -142,6 +156,15 @@ def check_page(fixtures: Fixtures, name: str, markup: str, coverage_label: str) 
     problems: list[str] = []
     page = htmlscan.read(markup, exempt_ancestors=EXEMPT)
 
+    # -- 0. nothing on the page is hidden from its reader ------------------
+    # Every rule below asks whether something is shown; text a reader cannot
+    # see would answer "yes" for them.
+    for pattern, what in htmlscan.HIDING:
+        hit = pattern.search(markup)
+        if hit:
+            problems.append(f"{name}: carries {what} ({hit.group(0)[:60]!r}); every figure, "
+                            f"qualifier and provenance value on a page must be visible")
+
     # -- 3. every figure resolves -----------------------------------------
     figures = 0
     for element in page.marked:
@@ -182,7 +205,8 @@ def check_page(fixtures: Fixtures, name: str, markup: str, coverage_label: str) 
     shown = {e.value.partition("#")[2] for e in banner}
     for pointer, what in [("/provenance/tag", "the tag"),
                           ("/provenance/sourceCommitShort", "the commit"),
-                          ("/provenance/releaseAudit/label", "the release-audit coverage")]:
+                          ("/provenance/releaseAudit/label", "the release-audit coverage"),
+                          ("/provenance/identityBinding", "the identity binding")]:
         if pointer not in shown:
             problems.append(f"{name}: {what} is not in the in-frame provenance banner "
                             f"(expected a captured {pointer})")
@@ -191,18 +215,26 @@ def check_page(fixtures: Fixtures, name: str, markup: str, coverage_label: str) 
     block_shown = {e.value.partition("#")[2] for e in block}
     for pointer, what in [("/provenance/sourceCommit", "the full commit SHA"),
                           ("/provenance/releaseAudit/statement",
-                           "the verbatim release-audit coverage")]:
+                           "the verbatim release-audit coverage"),
+                          ("/provenance/identityBinding", "the identity binding")]:
         if pointer not in block_shown:
             problems.append(f"{name}: {what} is not in the provenance block "
                             f"(expected a captured {pointer})")
 
     # -- 4. no unqualified claim about the source state -------------------
-    for sentence in htmlscan.sentences(page.text):
+    # The qualifier must be the captured label in the same sentence — an
+    # element whose `data-captured` pointer is the release-audit label, whose
+    # text step 3 above has already compared with the fixture. The same word
+    # typed by the page is not a qualifier: at `COMPLETE` it is an ordinary
+    # English word, and a check satisfied by it would pass "complete, and
+    # audited" with no captured value anywhere near.
+    for sentence, captured in htmlscan.sentences_with_captures(page):
         hit = CHARACTERISING.search(sentence)
-        if hit and coverage_label.lower() not in sentence.lower():
+        if hit and not any(ref.endswith("#" + LABEL_POINTER) for ref in captured):
             problems.append(
                 f"{name}: a sentence calls the source state {hit.group(0)!r} without the "
-                f"captured coverage qualifier ({coverage_label!r}) beside it:\n"
+                f"captured coverage qualifier ({coverage_label!r}, rendered from "
+                f"{LABEL_POINTER}) beside it:\n"
                 f"      {sentence}")
     return problems
 
@@ -243,7 +275,8 @@ def main() -> int:
     prov = fixtures.provenance()
     print(f"provenance-present OK — {len(pages)} page(s) and "
           f"{len(fixtures.bundles) + 2} fixture(s), all stamped "
-          f"{prov['tag']} {prov['sourceCommitShort']}, release audit: {coverage_label}; "
+          f"{prov['tag']} {prov['sourceCommitShort']}, release audit: {coverage_label}, "
+          f"identityBinding: {prov['identityBinding']}; "
           f"the published fixtures are byte-identical to the committed ones.")
     return 0
 

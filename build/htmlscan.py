@@ -29,6 +29,18 @@ BLOCK = {"p", "div", "li", "ul", "ol", "h1", "h2", "h3", "h4", "h5", "h6",
 MARKERS = ("data-captured", "data-captured-json", "data-captured-markdown",
            "data-scope-statement")
 
+# Ways a page can carry text a reader does not see. The site's only styling is
+# its stylesheet, so none of these has a use here — and each would let a check
+# that asks "is the qualifier beside the claim?" or "is the binding in frame?"
+# be answered by something nobody can read. Refused by the build and failed by
+# `provenance-present`, over the built output.
+HIDING = [
+    (re.compile(r"<[a-z][^>]*\shidden(?=[\s=>/])", re.I), "a hidden element"),
+    (re.compile(r"<[a-z][^>]*\saria-hidden\s*=", re.I), "an aria-hidden element"),
+    (re.compile(r"<[a-z][^>]*\sstyle\s*=", re.I), "an inline style"),
+    (re.compile(r"<template[\s>]", re.I), "a template element"),
+]
+
 
 class Marked:
     """One marked element: its attribute, its value, its text and its ancestry."""
@@ -54,6 +66,11 @@ class PageReader(HTMLParser):
         self.open_marked: list[tuple[Marked, int]] = []
         self.text_parts: list[str] = []
         self.exempt_text_parts: list[str] = []
+        # The same visible text as `text_parts`, chunk by chunk, each chunk with
+        # the `data-captured` references of the elements it sits inside. Kept
+        # so that a check can ask whether a *captured* value — not merely the
+        # same word typed — is in a given sentence.
+        self.segments: list[tuple[str, tuple[str, ...]]] = []
         self._exempt_depth = 0
 
     # -- ancestry ----------------------------------------------------------
@@ -101,6 +118,7 @@ class PageReader(HTMLParser):
             self.exempt_text_parts.append("\n")
         else:
             self.text_parts.append("\n")
+            self.segments.append(("\n", ()))
 
     def handle_data(self, data):
         for element, _ in self.open_marked:
@@ -111,6 +129,8 @@ class PageReader(HTMLParser):
             self.exempt_text_parts.append(data)
         else:
             self.text_parts.append(data)
+            self.segments.append((data, tuple(e.value for e, _ in self.open_marked
+                                              if e.marker == "data-captured")))
 
     # -- results -----------------------------------------------------------
 
@@ -150,3 +170,36 @@ def sentences(text: str) -> list[str]:
     """
     return [re.sub(r"\s+", " ", s).strip()
             for s in SENTENCE_END.split(text) if s.strip()]
+
+
+def sentences_with_captures(page: PageReader) -> list[tuple[str, set[str]]]:
+    """Visible text outside exempt regions as sentences, each with the
+    `data-captured` references whose rendered text falls inside it.
+
+    Split exactly as `sentences` splits — at sentence-ending punctuation and at
+    the block boundaries `PageReader` recorded — but over the chunks the text
+    was built from, so that a sentence knows which captured values it carries.
+    This is what lets a check tell a qualifier rendered from a fixture from the
+    same word typed by whoever wrote the page.
+    """
+    text = "".join(chunk for chunk, _ in page.segments)
+    spans, at = [], 0
+    for chunk, refs in page.segments:
+        spans.append((at, at + len(chunk), refs))
+        at += len(chunk)
+    bounds, start = [], 0
+    for match in SENTENCE_END.finditer(text):
+        bounds.append((start, match.start()))
+        start = match.end()
+    bounds.append((start, len(text)))
+    found = []
+    for begin, end in bounds:
+        sentence = re.sub(r"\s+", " ", text[begin:end]).strip()
+        if not sentence:
+            continue
+        refs = set()
+        for s0, s1, chunk_refs in spans:
+            if chunk_refs and s0 < end and s1 > begin:
+                refs.update(chunk_refs)
+        found.append((sentence, refs))
+    return found
